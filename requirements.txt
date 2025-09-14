@@ -50,5 +50,8 @@ mss>=9.0.0           # Fast screen capture library
 pyautogui>=0.9.50     # Cross-platform GUI automation
 Pillow>=9.0.0         # Image processing for screenshots
 
+# DuckDuckGo Search (for image search examples)
+duckduckgo-search>=6.1.0  # DuckDuckGo search API
+
 # Game Engine (for Render controller)
 pygame>=2.5.0        # 2D game engine for simulation visualization

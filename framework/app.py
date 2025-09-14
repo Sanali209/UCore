@@ -50,6 +50,33 @@ class App:
 
         try:
             loop.run_until_complete(self._main_loop())
+
+            # Check if any component is a PySide6Adapter (GUI app)
+            has_qt_adapter = any(hasattr(component, 'qt_app') for component in self._components)
+
+            if has_qt_adapter:
+                self.logger.info("GUI application detected - transferring control to Qt event loop")
+                import sys
+
+                # Find Qt app from any PySide6Adapter
+                qt_app = None
+                for component in self._components:
+                    if hasattr(component, 'qt_app') and component.qt_app:
+                        qt_app = component.qt_app
+                        self.logger.info(f"Found Qt app from {component.__class__.__name__}")
+                        break
+
+                if qt_app:
+                    self.logger.info("Starting Qt event loop with Qt application")
+                    # Run Qt event loop - this will keep GUI active
+                    sys.exit(qt_app.exec())
+                    self.logger.info("Qt event loop finished")
+                else:
+                    self.logger.error("Qt application found but no valid Qt app instance - cannot start GUI")
+            else:
+                # CLI app - normal shutdown
+                pass
+
         except KeyboardInterrupt:
             self.logger.info("Shutdown requested via KeyboardInterrupt.")
         finally:

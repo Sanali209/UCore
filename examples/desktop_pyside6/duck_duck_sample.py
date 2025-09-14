@@ -12,13 +12,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtGui import QPixmap, QImage
 from PySide6.QtCore import Qt, QMetaObject
-try:
-    from duckduckgo_search import DDGS
-except ImportError:
-    try:
-        from ddgs import DDGS
-    except ImportError:
-        raise ImportError("Please install 'duckduckgo-search' or 'ddgs' package: pip install duckduckgo-search")
+from duckduckgo_search import DDGS
 
 # This allows the example to be run from the root of the repository
 sys.path.insert(0, 'd:/UCore')
@@ -28,6 +22,7 @@ from framework.ui.pyside6_adapter import PySide6Adapter
 from framework.config import Config
 from framework.logging import Logging
 from framework.cpu_tasks import ConcurrentFuturesAdapter
+from framework.component import Component
 
 
 class DuckDuckGoImageSearch(QMainWindow):
@@ -416,28 +411,71 @@ class DuckDuckGoImageSearch(QMainWindow):
                 widget_to_remove.deleteLater()
 
 
+class DuckUIComponent(Component):
+    """Component to manage the DuckDuckGo UI lifecycle"""
+
+    def __init__(self):
+        self.main_window = None
+        self.adapter = None
+
+    async def start(self):
+        """Called when the app starts - setup UI here"""
+        print("UCore Duck UI: Starting DuckDuckGo interface...")
+
+        # CRITICAL: Ensure Qt application is ready BEFORE creating any widgets
+        if not self.adapter or not self.adapter.ensure_qt_ready():
+            print("❌ Qt application not ready - cannot create UI widgets")
+            return
+
+        # Create the main window using the adapter's factory
+        if self.adapter:
+            try:
+                self.main_window = self.adapter.create_widget(DuckDuckGoImageSearch)
+                self.adapter.add_window(self.main_window)
+
+                # Show the window
+                self.main_window.show()
+                print("✅ DuckDuckGo main window created and displayed successfully")
+            except Exception as e:
+                print(f"❌ Failed to create DuckDuckGo UI: {e}")
+                return
+
+    async def stop(self):
+        """Called when the app stops"""
+        print("Duck UI: Stopping...")
+        if self.main_window:
+            self.main_window.close()
+            print("✅ DuckDuckGo main window closed")
+
+
 def create_duck_duck_app():
     """
     Application factory for the DuckDuckGo image search app.
+    Now properly configured for current UCore framework patterns.
     """
-    # 1. Initialize the main App object
-    app = App(name="DuckDuckGoImageSearch")
+    print("🔧 Creating DuckDuckGo Image Search App...")
 
-    # 2. Register the PySide6Adapter for UI
+    # 1. Initialize the main App object
+    app = App(name="UCoreDuckDuckgoSearch")
+
+    # 2. Register PySide6Adapter first (ensures Qt integration)
     pyside6_adapter = PySide6Adapter(app)
     app.register_component(lambda: pyside6_adapter)
 
-    # 3. Register the ConcurrentFuturesAdapter for threading
+    # 3. Register ConcurrentFuturesAdapter for threading
     concurrent_adapter = ConcurrentFuturesAdapter(app)
     app.register_component(lambda: concurrent_adapter)
-    # Register the instance for dependency injection
-    app.container.register(ConcurrentFuturesAdapter, concurrent_adapter)
+    # Register for dependency injection (instance first, then type)
+    app.container.register_instance(concurrent_adapter, ConcurrentFuturesAdapter)
 
-    # 4. Create and show the main window (dependency injection will handle parameters)
-    main_window = pyside6_adapter.create_widget(DuckDuckGoImageSearch)
-    pyside6_adapter.add_window(main_window)
-    main_window.show()
+    # 4. Create and register UI component that will create the window
+    ui_component = DuckUIComponent()
+    ui_component.adapter = pyside6_adapter
+    app.register_component(lambda: ui_component)
 
+    print("✅ DuckDuckGo framework components registered")
+    print("✅ Duck UI component registered")
+    print("✅ Ready for window creation and display")
     return app
 
 
