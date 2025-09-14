@@ -1,0 +1,7 @@
+/.idea
+/.pytest_cache
+/.venv
+/.vscode
+/cache
+/task_tracker_data.json
+/ucore_default.db
