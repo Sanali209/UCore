@@ -4,13 +4,26 @@ from sqlalchemy import Column, Integer, String, Boolean, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from aiohttp import web
 
+#!/usr/bin/env python3
+"""
+API with Database Example - Domain-Driven Structure
+
+This example demonstrates:
+- Web domain: HTTP server and routing
+- Data domain: Database adapter and models
+- Core domain: Dependency injection
+"""
+
+from sqlalchemy import Column, Integer, String, Boolean, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 # This allows the example to be run from the root of the repository
 sys.path.insert(0, 'd:/UCore')
 
-from framework.app import App
-from framework.http import HttpServer
-from framework.db import SQLAlchemyAdapter, Base
-from framework.di import Depends
+from framework import App
+from framework.web import HttpServer
+from framework.data.db import SQLAlchemyAdapter, Base
+from framework.core.di import Depends
 
 # 1. Define a SQLAlchemy Model
 class Todo(Base):
@@ -20,16 +33,16 @@ class Todo(Base):
     completed = Column(Boolean, default=False)
 
 # 2. Define a dependency provider for the database session
-def get_db_session(adapter: SQLAlchemyAdapter):
+def get_db_session(adapter):
     return adapter.get_session()
 
 # 3. Application Factory
 def create_api_app():
     app = App(name="TodoAPI")
 
-    # Register core components
-    http_server = HttpServer(app)
-    db_adapter = SQLAlchemyAdapter(app)
+    # Register core components across domains
+    http_server = HttpServer(app, port=8070)         # Use different port to avoid conflicts
+    db_adapter = SQLAlchemyAdapter(app)               # Data domain
     app.register_component(lambda: http_server)
     app.register_component(lambda: db_adapter)
 

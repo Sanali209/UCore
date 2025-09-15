@@ -17,12 +17,12 @@ from duckduckgo_search import DDGS
 # This allows the example to be run from the root of the repository
 sys.path.insert(0, 'd:/UCore')
 
-from framework.app import App
-from framework.ui.pyside6_adapter import PySide6Adapter
-from framework.config import Config
-from framework.logging import Logging
-from framework.cpu_tasks import ConcurrentFuturesAdapter
-from framework.component import Component
+from framework import App
+from framework.desktop import PySide6Adapter
+from framework.core import Config
+from framework.monitoring import Logging
+from framework.processing.cpu_tasks import ConcurrentFuturesAdapter
+from framework.core.component import Component
 
 
 class DuckDuckGoImageSearch(QMainWindow):

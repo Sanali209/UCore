@@ -24,10 +24,10 @@ import time
 from typing import Any
 sys.path.insert(0, 'd:/UCore')
 
-from framework.app import App
-from framework.http import HttpServer
-from framework.redis_adapter import RedisAdapter
-from framework.di import Depends
+from framework import App
+from framework.web import HttpServer
+from framework.messaging.redis_adapter import RedisAdapter
+from framework.core.di import Depends
 import aiohttp
 from aiohttp import web
 
@@ -327,33 +327,73 @@ def create_publisher_app():
     return app
 
 
-def main():
-    """
-    Main entry point for the Redis publisher example.
-    """
-    print("🚀 UCore Redis Message Publisher Example")
-    print("=" * 60)
-    print()
-    print("This application PUBLISHES messages and events to Redis.")
-    print("Start a separate subscriber to see the messages being consumed.")
-    print()
-    print("Prerequisites:")
-    print("  ✅ Redis server running (redis://localhost:6379/0)")
-    print("  ❌ Start subscriber in separate terminal")
-    print()
-    print("API Endpoints:")
-    print("  POST /publish  - Publish message to Redis channel")
-    print("  POST /stream   - Add event to Redis Stream")
-    print("  POST /batch    - Publish multiple messages")
-    print("  POST /cache    - Set cache value with TTL")
-    print("  GET  /cache/key - Retrieve cached value")
-    print("  GET  /status   - System health check")
-    print()
+async def main():
+    """Main demonstration function."""
+    print("🏗️ UCORE REDIS MESSAGE PUBLISHER DEMO")
+    print("=" * 50)
 
-    # Create and run the application
-    publisher_app = create_publisher_app()
-    publisher_app.run()
+    # Create the publisher application
+    app = create_publisher_app()
+
+    print("\n🚀 Starting Redis Message Publisher...")
+
+    try:
+        # Start the application (this initializes all components)
+        await app.start()
+
+        print("\n✅ REDIS PUBLISHER STARTED SUCCESSFULLY!")
+        print("\n📊 Publisher Status:")
+        print("   🌐 HTTP API: Running on port 8080")
+        print("   🔴 Redis: Connected")
+        print("   📢 Event Bus: Connected")
+
+        print("\n🔌 AVAILABLE ENDPOINTS:")
+        print("   POST http://localhost:8080/publish     - Publish message to Redis channel")
+        print("   POST http://localhost:8080/stream      - Add event to Redis Stream")
+        print("   POST http://localhost:8080/batch       - Publish multiple messages")
+        print("   POST http://localhost:8080/cache       - Set cache value")
+        print("   GET  http://localhost:8080/cache/{key} - Get cache value")
+        print("   GET  http://localhost:8080/status      - System health check")
+
+        print("\n🎯 DEMONSTRATION FEATURES:")
+        print("   🏗️  UCore Component Architecture")
+        print("   🔗 Dependency Injection with @Depends()")
+        print("   🔴 Redis Pub/Sub Messaging")
+        print("   📊 Redis Streams")
+        print("   🧠 Redis Caching")
+        print("   🔄 Batch Operations")
+
+        print("\n💡 TESTING THE PUBLISHER:")
+
+        print("\n1. Check status:")
+        print('   curl http://localhost:8080/status')
+
+        print("\n2. Publish a message:")
+        print('   curl -X POST http://localhost:8080/publish \\')
+        print('        -H "Content-Type: application/json" \\')
+        print('        -d \'{"channel": "notifications", "message": "Hello World"}\'')
+
+        print("\n3. Add to stream:")
+        print('   curl -X POST http://localhost:8080/stream \\')
+        print('        -H "Content-Type: application/json" \\')
+        print('        -d \'{"user_id": "123", "action": "login"}\'')
+
+        print("\n🎯 PUBLISHER RUNNING - Press Ctrl+C to stop")
+
+        # Keep the service running
+        while True:
+            await asyncio.sleep(1)
+
+    except KeyboardInterrupt:
+        print("\n\n🛑 PUBLISHER INTERRUPTED BY USER")
+    except Exception as e:
+        print(f"❌ PUBLISHER ERROR: {e}")
+        raise
+    finally:
+        print("\n🏁 CLEANING UP PUBLISHER...")
+        await app.stop()
+        print("✨ SHUTDOWN COMPLETE")
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

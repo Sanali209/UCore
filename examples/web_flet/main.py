@@ -7,8 +7,8 @@ import flet as ft
 sys.path.insert(0, 'd:/UCore')
 
 from framework.app import App
-from framework.ui.flet_adapter import FletAdapter
-from framework.config import Config
+from framework.desktop.ui.flet_adapter import FletAdapter
+from framework.core.config import Config
 
 # This is the main function for the Flet UI
 def flet_main(page: ft.Page):

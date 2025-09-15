@@ -1,829 +1,622 @@
-# UCore Framework Comprehensive Guide
+# 🚀 **UCore Framework Guide - Version 1.0.0**
 
-## Table of Contents
-- [🎯 Overview](#-overview)
-- [🚀 Quick Start](#-quick-start)
-- [🏗️ Core Architecture](#️-core-architecture)
-- [🔧 Component System](#-component-system)
-- [⚙️ Dependency Injection](#️-dependency-injection)
-- [🌐 HTTP Server & APIs](#-http-server--apis)
-- [💾 Database Integration](#-database-integration)
-- [⚙️ Configuration System](#️-configuration-system)
-- [🎨 UI Frameworks](#-ui-frameworks)
-- [🎮 Simulation Framework](#-simulation-framework)
-- [🔧 CLI Tools](#-cli-tools)
-- [📊 Observability & Metrics](#-observability--metrics)
-- [🔌 Plugin System](#-plugin-system)
-- [🎯 Background Tasks](#-background-tasks)
-- [📝 Examples & Recipes](#-examples--recipes)
+## 📖 **Framework Overview**
+
+UCore is an **enterprise-grade, component-based framework** for building sophisticated Python applications with integrated observability, asynchronous processing, and extensibility features. Built for production use with modern Python best practices.
+
+**Core Philosophy:** *Component-first architecture with dependency injection, comprehensive monitoring, and plugin extensibility for scalable applications.*
 
 ---
 
-## 🎯 Overview
+## 🏗️ **Architecture Overview**
 
-UCore is a comprehensive Python framework designed for building modern, scalable applications with:
+### **Core Principles**
+- **Component-Based Design** - Everything is a component with lifecycle management
+- **Dependency Injection** - Type-safe service resolution and scoping
+- **Event-Driven Architecture** - Comprehensive event system for component communication
+- **Observability First** - Built-in monitoring, metrics, and logging
+- **Extensibility** - Plugin system for feature extension
+- **Cross-Platform** - Works on server, desktop, web, and mobile platforms
 
-- **🏗️ Component Architecture** - Modular, lifecycle-managed components
-- **⚙️ Dependency Injection** - Clean, testable service management
-- **🌐 HTTP Server** - Built-in async HTTP server with aiohttp
-- **💾 Database Integration** - SQLAlchemy-based data persistence
-- **🎨 UI Support** - Multiple UI frameworks (Flet, PySide6)
-- **📊 Observability** - Metrics, logging, and monitoring
-- **🔌 Extensible Plugins** - Plugin architecture for extensibility
-
-### Key Features
-- **Async-First Design** - Built for modern Python async patterns
-- **Type-Safe Configuration** - Strong typing with Pydantic
-- **Component Lifecycle** - Automatic startup/cleanup management
-- **Rich Ecosystem** - Comprehensive tools and utilities
-- **Production Ready** - Error handling, logging, metrics built-in
+### **Key Features**
+- ✅ **Async Architecture** - Built for high-performance async/await patterns
+- ✅ **Multi-Platform UI** - Flet (web) and PySide6 (desktop) support
+- ✅ **Professional Monitoring** - Prometheus metrics and OpenTelemetry observability
+- ✅ **Background Processing** - Redis/Celery integration for task management
+- ✅ **Database Integration** - SQLAlchemy-based data management
+- ✅ **Configuration Management** - YAML-based config with environment variable support
+- ✅ **Plugin System** - Dynamic extensibility through plugins
+- ✅ **Simulation & Testing** - Built-in simulation framework for testing
 
 ---
 
-## 🚀 Quick Start
+## 📦 **Core Components**
 
-### 1. Installation
+### **1. Application Architecture**
 
-```bash
-pip install -r requirements.txt
-```
-
-### 2. Your First UCore App
+#### **App Class** (`framework/app.py`)
+Central orchestration engine managing:
+- **Component Lifecycle** - Automatic startup/shutdown of all components
+- **Dependency Injection** - Container management and service resolution
+- **Configuration Management** - YAML configs with environment variable overrides
+- **Event System** - Built-in event publishing for application lifecycle
+- **Plugin Loading** - Dynamic plugin discovery and registration
+- **Signal Handling** - Graceful shutdown on SIGINT/SIGTERM
+- **CLI Integration** - Argument parsing and bootstrap configuration
 
 ```python
+# Correct imports for current framework
 from framework.app import App
-from framework.component import Component
+from framework.core.component import Component
 
-class HelloWorldComponent(Component):
-    def start(self):
-        self.app.logger.info("Hello from UCore!")
-
-    def stop(self):
-        self.app.logger.info("Goodbye from UCore!")
-
-# Create and run the app
-app = App(name="HelloWorldApp")
-app.register_component(lambda: HelloWorldComponent())
-app.run()
-```
-
-### 3. HTTP Server Example
-
-```python
-from framework.app import App
-from framework.http import HttpServer
-
-app = App(name="WebApp")
-
-http_server = HttpServer(app)
-
-@http_server.route("/api/hello", "GET")
-def hello_endpoint(request):
-    return {"message": "Hello, World!", "status": "success"}
-
-app.register_component(lambda: http_server)
-app.run()
-```
-
----
-
-## 🏗️ Core Architecture
-
-### Application Structure
-
-```
-📦 UCore Framework
-├── 🎯 App (Main Orchestrator)
-├── 🔧 Components (Modular Services)
-├── ⚙️ DI Container (Dependency Management)
-├── 🌐 HTTP Server (API Layer)
-├── 💾 Database (Data Persistence)
-├── 🎨 UI Adapters (User Interface)
-├── 📊 Observability (Monitoring)
-└── 🔌 Plugins (Extensibility)
-```
-
-### Key Classes
-
-```python
-# Main application orchestrator
-class App:
-    def __init__(self, name: str, config_path: str = None)
-    def register_component(self, component_factory: Callable)
-    def run(self) -> None
-    async def start(self) -> None  # Async startup
-    async def stop(self) -> None   # Async shutdown
-
-# Base class for all services
-class Component:
-    def __init__(self)
-    def start(self) -> None    # Lifecycle: start
-    def stop(self) -> None     # Lifecycle: stop
-
-# Dependency injection container
-class Container:
-    def register(self, service_class, implementation=None, scope=Scope.SINGLETON)
-    def get(self, service_type) -> object
-```
-
----
-
-## 🔧 Component System
-
-Components are the building blocks of UCore applications. They follow a clear lifecycle pattern.
-
-### Basic Component
-
-```python
-from framework.component import Component
-
-class DatabaseComponent(Component):
-    def __init__(self):
-        self.connection = None
-
-    def start(self):
-        """Called when app starts"""
-        self.connection = create_database_connection()
-        self.app.logger.info("Database connected")
-
-    def stop(self):
-        """Called when app stops"""
-        if self.connection:
-            self.connection.close()
-            self.app.logger.info("Database disconnected")
-```
-
-### Component Registration
-
-```python
 app = App("MyApp")
-
-# Method 1: Lambda factory
-app.register_component(lambda: DatabaseComponent())
-
-# Method 2: Instance
-db_comp = DatabaseComponent()
-app.register_component(lambda: db_comp)
-
-# Method 3: Class with custom args
-def create_service(port=8080):
-    return HttpService(port=port)
-
-app.register_component(create_service)
+app.register_component(lambda: MyComponent(app))  # Lambda wrapper required
+await app.start()  # Async startup pattern
 ```
 
-### Advanced Component Patterns
+#### **Component System** (`framework/core/component.py`)
+Base class for all framework components providing:
+- **Lifecycle Management** - Standard `start()` and `stop()` methods
+- **Dependency Injection** - Access to the DI container through `app.container`
+- **Error Handling** - Structured error publishing through EventBus
+- **Event Publishing** - Component lifecycle event publishing
+- **Configuration Updates** - Dynamic configuration change notifications
 
 ```python
-class AsyncComponent(Component):
+from framework.core.component import Component
+from framework.monitoring.metrics import HTTPMetricsAdapter
+
+class MyComponent(Component):
+    def __init__(self, app):
+        self.app = app  # App passed by factory function
+        self.metrics = app.container.get(HTTPMetricsAdapter)
+
     async def start(self):
-        """Async startup - for connecting to external services"""
-        self.client = await connect_to_external_service()
-        self.app.logger.info("Service connected")
+        # Component initialization logic
+        pass
 
     async def stop(self):
-        """Async shutdown"""
-        if self.client:
-            await self.client.disconnect()
-            self.app.logger.info("Service disconnected")
+        # Component cleanup logic
+        pass
+
+    def on_config_update(self, config):
+        # Handle configuration changes
+        pass
 ```
 
----
+### **2. Dependency Injection**
 
-## ⚙️ Dependency Injection
-
-UCore provides a powerful DI container for managing service dependencies.
-
-### Basic Usage
+#### **Container System** (`framework/di.py`)
+Advanced dependency injection container with:
+- **Multiple Scopes** - Singleton, Transient, and Scoped resolution
+- **Type Safety** - Interface-based service registration
+- **Circular Dependency Detection** - Automatic detection and error reporting
+- **Provider Override** - Runtime service replacement for testing
+- **Instance Registration** - Pre-created object injection
 
 ```python
-from framework.di import Container, Scope
-
-# Create container
-container = Container()
+from framework.core.di import Container, Scope
 
 # Register services
-container.register(UserService)
 container.register(DatabaseService, scope=Scope.SINGLETON)
-container.register(CacheService, scope=Scope.TRANSIENT)
+container.register_instance(my_config, DatabaseConfig)
 
-# Resolve services
-user_service = container.get(UserService)
-```
-
-### Scopes
-
-```python
-# Singleton - One instance for entire application
-container.register(DatabaseService, scope=Scope.SINGLETON)
-db1 = container.get(DatabaseService)
-db2 = container.get(DatabaseService)
-assert db1 is db2  # Same instance
-
-# Transient - New instance every time
-container.register(UserService, scope=Scope.TRANSIENT)
-user1 = container.get(UserService)
-user2 = container.get(UserService)
-assert user1 is not user2  # Different instances
-```
-
-### Constructor Injection
-
-```python
-class UserService:
-    def __init__(self, database: DatabaseService, cache: CacheService):
-        self.database = database
-        self.cache = cache
-
-class ApplicationService:
-    def __init__(self, user_service: UserService):
-        self.user_service = user_service
-
-# Registration happens automatically
-container.register(DatabaseService)
-container.register(CacheService)
-container.register(UserService)  # Dependencies resolved automatically
-
-app_service = container.get(ApplicationService)
-# Result: ApplicationService -> UserService -> DatabaseService & CacheService
+# Resolve dependencies
+service = container.get(DatabaseService)
 ```
 
 ---
 
-## 🌐 HTTP Server & APIs
+## 🌐 **Web & HTTP Services**
 
-UCore includes a built-in HTTP server with automatic dependency injection.
-
-### Basic HTTP Server
+### **HTTP Server Component** (`framework/web/http.py`)
+Production-ready HTTP server with:
+- **Async Processing** - aiohttp-based high-performance server
+- **Route Decorators** - Type-safe route registration with DI
+- **Automatic Metrics** - Integrated Prometheus metrics collection
+- **Event Integration** - Comprehensive request/response event publishing
+- **Error Handling** - Structured HTTP error event creation
+- **Middleware Support** - Custom middleware chains
+- **Configuration Integration** - Runtime server configuration updates
 
 ```python
 from framework.app import App
-from framework.http import HttpServer
+from framework.web.http import HttpServer
 
-app = App("APIServer")
-http_server = HttpServer(app)
+# Create app and register HTTP server
+app = App("MyWebApp")
+http_server = HttpServer(app, host="0.0.0.0", port=8080)
 
-@http_server.route("/api/users", "GET")
-def get_users(request):
-    # Dependencies are automatically injected
-    db = request.app.container.get(DatabaseService)
-    users = db.get_all_users()
-    return {"users": users}
+@http_server.route("/api/data", "GET")
+async def get_data():
+    # Direct dependency injection in route handlers
+    return {"data": "Hello World", "status": "success"}
 
-@http_server.route("/api/users", "POST")
-def create_user(request):
-    # Access request data
-    user_data = request.json()
-
-    # Create user through service
-    user_service = request.app.container.get(UserService)
-    new_user = user_service.create_user(user_data)
-
-    return {"user": new_user, "status": "created"}, 201
-
+# Register and start
 app.register_component(lambda: http_server)
-app.run(port=8000)
+await app.start()  # Server starts automatically
 ```
 
-### Advanced Routing
+### **Metrics & Monitoring** (`framework/monitoring/metrics.py`)
+Enterprise-grade observability system:
+- **Prometheus Integration** - Counter, Histogram, Gauge metrics
+- **Automatic HTTP Metrics** - Request duration, status codes, response sizes
+- **Error Tracking** - HTTP error metrics with type classification
+- **Performance Analysis** - Latency distribution and throughput monitoring
+- **Business Metrics** - Custom metric decorators for business logic
+- **Realtime Dashboards** - Prometheus-compatible metrics endpoint
 
 ```python
-# Multiple HTTP methods for same path
-@http_server.route("/api/books/{id}", "GET")
-def get_book(request):
-    book_id = request.match_info['id']
-    return {"book": get_book_by_id(book_id)}
+from framework.monitoring.metrics import HTTPMetricsAdapter
 
-@http_server.route("/api/books/{id}", "PUT")
-def update_book(request):
-    book_id = request.match_info['id']
-    data = request.json()
-    return {"book": update_book(book_id, data)}
+# Create app with metrics
+app = App("MetricsApp")
+metrics_adapter = HTTPMetricsAdapter(app)
 
-@http_server.route("/api/books/{id}", "DELETE")
-def delete_book(request):
-    book_id = request.match_info['id']
-    delete_book_by_id(book_id)
-    return {"message": "Book deleted"}, 204
-```
-
-### Middleware Support
-
-```python
-# Custom middleware
-def logging_middleware(request, response):
-    request.app.logger.info(f"{request.method} {request.path}")
-    return response
-
-http_server.add_middleware(logging_middleware)
+@http_server.route("/metrics", "GET")
+async def get_metrics():
+    return {"metrics_endpoint": "available"}
 ```
 
 ---
 
-## 💾 Database Integration
+## 🗄️ **Database Operations**
 
-UCore provides seamless database integration with SQLAlchemy.
-
-### Database Setup
+### **SQLAlchemy Integration** (`framework/db.py`)
+Comprehensive database management with:
+- **Async SQLAlchemy** - Full async database operations
+- **Connection Pooling** - Efficient connection management
+- **Session Monitoring** - Transaction lifecycle tracking
+- **Performance Metrics** - Query duration and connection monitoring
+- **Error Publishing** - Database error event creation
+- **Transaction Context** - Monitored transaction boundaries
 
 ```python
-from framework.app import App
-from framework.db import SQLAlchemyAdapter
+from framework.data.db import SQLAlchemyAdapter
 
-app = App("DatabaseApp")
-
-# Database configuration through config
 db_adapter = SQLAlchemyAdapter(app)
-# Config loaded from environment or config file
-# DATABASE_URL=/tmp/test.db
 
-app.register_component(lambda: db_adapter)
-```
-
-### Model Definition
-
-```python
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, DateTime
-import datetime
-
-Base = declarative_base()
-
-class User(Base):
-    __tablename__ = 'users'
-
-    id = Column(Integer, primary_key=True)
-    name = Column(String(100), nullable=False)
-    email = Column(String(100), unique=True, nullable=False)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
-```
-
-### Database Operations
-
-```python
-from sqlalchemy.orm import sessionmaker
-
-class UserService:
-    def __init__(self, database_adapter: SQLAlchemyAdapter):
-        self.session_local = database_adapter.SessionLocal
-
-    def create_user(self, name: str, email: str):
-        with self.session_local() as session:
-            user = User(name=name, email=email)
-            session.add(user)
-            session.commit()
-            session.refresh(user)
-            return user
-
-    def get_user(self, user_id: int):
-        with self.session_local() as session:
-            return session.query(User).filter(User.id == user_id).first()
-
-    def list_users(self):
-        with self.session_local() as session:
-            return session.query(User).all()
+# Get monitored session
+async with db_adapter.get_session() as session:
+    result = await session.execute("SELECT * FROM users")
+    # Session lifecycle events are automatically published
 ```
 
 ---
 
-## ⚙️ Configuration System
+## 🔄 **Background Processing**
 
-UCore provides flexible configuration management from multiple sources.
+### **Task Management** (`framework/background.py`, `framework/tasks.py`)
+Distributed task processing with:
+- **Celery Integration** - Asynchronous task processing
+- **Redis Backend** - Result storage and broker communication
+- **Task Monitoring** - Execution status, duration, and error tracking
+- **Retry Logic** - Automatic retry on task failure
+- **Worker Management** - Distributed worker coordination
 
-### Configuration Sources
-
-```python
-from framework.config import Config
-
-config = Config()
-
-# Load from dictionary
-config.load_from_dict({
-    "app": {"name": "MyApp", "version": "1.0.0"},
-    "database": {"url": "sqlite:///app.db"},
-    "logger": {"level": "INFO"}
-})
-
-# Load from JSON file
-config.load_from_file("/path/to/config.json")
-
-# Load from environment variables
-config.load_environment()  # UCORE_APP_NAME, UCORE_DATABASE_URL, etc.
-```
-
-### Configuration Usage
-
-```python
-# Access configuration values
-app_name = config.get("app.name")
-db_url = config.get("database.url")
-
-# Access nested config
-app_config = config.get("app")  # Returns dict
-app_name = app_config["name"]
-
-# Safe access with defaults
-debug_mode = config.get("app.debug", default=False)
-port = config.get("server.port", default=8080)
-```
-
-### Advanced Configuration Patterns
-
-```python
-# Runtime configuration updates
-config.set("app.debug", True)
-config.set("server.max_connections", 1000)
-
-# Configuration validation
-from typing import Dict, Any
-from pydantic import BaseModel
-
-class AppConfig(BaseModel):
-    name: str
-    version: str
-    debug: bool = False
-    port: int = 8080
-
-app_config = AppConfig(**config.get("app"))
-```
+### **CPU Task Processing** (`framework/cpu_tasks.py`)
+Concurrent CPU-intensive operations:
+- **Thread Pool** - Offloaded CPU tasks from async loop
+- **Progress Tracking** - Task execution progress monitoring
+- **Resource Management** - CPU usage optimization
+- **Result Caching** - Task result memoization
 
 ---
 
-## 🎨 UI Frameworks
+## 🚀 **Event-Driven Architecture**
 
-UCore supports multiple UI frameworks for desktop and web applications.
+### **Event System** (`framework/events.py`, `framework/event_bus.py`)
+Sophisticated event delivery system:
+- **Type-Safe Events** - Dataclass-based event definitions
+- **Publish/Subscribe** - Component-to-component communication
+- **Event Filtering** - Selective event subscription
+- **Cross-Component Events** - Framework-wide event distribution
+- **Error Events** - Structured error event publishing
+- **Lifecycle Events** - Component startup/shutdown notification
 
-### Flet (Web/Desktop UI)
+```python
+from framework.messaging.event_bus import EventBus
+from framework.messaging.events import ComponentStartedEvent
+
+# Publish custom events
+event_bus.publish(ComponentStartedEvent(component_name="MyService"))
+```
+
+### **Redis Event Bridge** (`framework/redis_adapter.py`)
+Inter-instance communication:
+- **Redis Pub/Sub** - Distributed event communication
+- **JSON Serialization** - Cross-platform event compatibility
+- **Channel Naming** - Organized event routing
+- **Message Queues** - Event buffering and processing
+
+---
+
+## 🎨 **User Interface Systems**
+
+### **Cross-Platform UI** (`framework/desktop/ui/flet_adapter.py`, `framework/desktop/ui/pyside6_adapter.py`)
+
+#### **FletAdapter** - Web/Browser Applications
+- **Cross-Platform Web Apps** - Create web apps that run on any device
+- **Modern UI Components** - Rich component library
+- **Real-time Updates** - Live UI updates and interactive widgets
+- **Responsive Design** - Automatic responsive layouts
+- **State Management** - Integrated state synchronization
+- **Deployment Options** - Self-hosted or cloud deployment
+- **Task Tracker Example** - Complete CRUD application with persistent data
 
 ```python
 from framework.app import App
-from framework.ui.flet_adapter import FletAdapter
+from framework.desktop.ui.flet_adapter import FletAdapter
 
-def create_flet_app():
-    import flet as ft
-
-    def main(page: ft.Page):
-        page.title = "My Flet App"
-
-        def button_clicked(e):
-            page.add(ft.Text("Hello, World!"))
-
-        page.add(ft.ElevatedButton("Say Hello", on_click=button_clicked))
-
-    return main
+def flet_main(page):
+    # Your Flet UI logic here
+    pass
 
 app = App("FletApp")
-flet_adapter = FletAdapter(app, target_func=create_flet_app())
+flet_adapter = FletAdapter(app, target_func=flet_main)
 app.register_component(lambda: flet_adapter)
-
-# Run web server
-app.run()  # Opens browser with Flet UI
+await app.start()  # Launches web server on port 8085
 ```
 
-### PySide6 (Desktop UI)
+#### **PySide6Adapter** - Desktop Applications
+- **Native Desktop Apps** - Professional-quality desktop applications
+- **Qt Integration** - Full Qt5/Qt6 widget system access
+- **Cross-Platform Desktop** - Windows, macOS, Linux support
+- **Event Loop Integration** - Seamless GUI and async integration
+- **Resource Management** - Memory and resource optimization
+
+---
+
+## 📊 **Observability & Monitoring**
+
+### **Logging System** (`framework/logging.py`)
+Structured logging with:
+- **Multiple Output** - Console, file, rotating file outputs
+- **Structured Data** - JSON-formatted log entries
+- **Performance Logging** - Execution time tracking
+- **Error Correlation** - Error ID generation for tracing
+- **Log Levels** - Dynamic log level adjustment
+
+### **Detailed Metrics** (`framework/metrics.py`)
+Complete monitoring stack:
+- **HTTP Metrics** - Request counts, durations, status codes
+- **System Metrics** - CPU, memory, disk usage
+- **Application Metrics** - Custom business metrics
+- **Error Metrics** - Error rates and categorization
+- **Performance Histograms** - Response time distributions
+
+---
+
+## 🔧 **Configuration Management**
+
+### **Configuration System** (`framework/config.py`, `framework/settings.py`)
+Advanced configuration management:
+- **YAML Configuration** - Hierarchical configuration files
+- **Environment Variables** - Runtime configuration override
+- **Hot Reload** - Configuration changes without restart
+- **Validation** - Configuration schema validation
+- **Multi-Source** - File, environment, and programmatic config
 
 ```python
-from framework.app import App
-from framework.ui.pyside6_adapter import PySide6Adapter
+# Configuration file (config.yml)
+app:
+  name: MyApp
+  http:
+    host: "0.0.0.0"
+    port: 8080
 
-def create_pyside_app():
-    from PySide6.QtWidgets import QApplication, QLabel, QPushButton, QVBoxLayout, QWidget
-
-    def main():
-        app = QApplication([])
-
-        window = QWidget()
-        window.setWindowTitle("My PySide6 App")
-
-        layout = QVBoxLayout()
-        label = QLabel("Hello, World!")
-        button = QPushButton("Click Me")
-
-        layout.addWidget(label)
-        layout.addWidget(button)
-        window.setLayout(layout)
-
-        window.show()
-        app.exec()
-
-    return main
-
-app = App("PySideApp")
-pyside_adapter = PySide6Adapter(app, target_func=create_pyside_app())
-app.register_component(lambda: pyside_adapter)
-
-app.run()  # Launches desktop window
+database:
+  url: "postgresql://user:pass@localhost/db"
 ```
 
 ---
 
-## 🎮 Simulation Framework
+## 🎯 **Plugin System & Extensibility**
 
-UCore includes a built-in simulation framework for game development and simulation.
-
-### Basic Simulation
-
-```python
-from framework.simulation.entity import EnvironmentEntity
-from framework.simulation.controllers import Transform
-
-# Create simulation entity
-entity = EnvironmentEntity(name="Player")
-
-# Add transformation controller
-transform = Transform(x=0, y=0, z=0)
-entity.add_controller(transform)
-
-# Update simulation
-def game_loop(delta_time):
-    entity.update(delta_time)
-
-    # Access current position
-    position = transform.get_position()
-    print(f"Entity position: {position}")
-```
-
----
-
-## 🔧 CLI Tools
-
-UCore provides powerful CLI tools for building command-line applications.
+### **Plugin Architecture** (`framework/plugins.py`)
+Dynamic extensibility through:
+- **Plugin Discovery** - Automatic plugin loading from directories
+- **Registration System** - Ordered plugin initialization
+- **Dependency Management** - Plugin dependencies and requirements
+- **Error Isolation** - Plugin failure isolation
+- **Hot Loading** - Runtime plugin loading and unloading
 
 ```python
-from framework.app import App
-from framework.cli import CLI
-
-class MyCLI(CLI):
-    def register_commands(self):
-        @self.command("greet", "Greet a user")
-        def greet(name: str, formal: bool = False):
-            greeting = "Good day" if formal else "Hello"
-            return f"{greeting}, {name}!"
-
-        @self.command("create", "Create a new project")
-        def create_project(name: str, template: str = "basic"):
-            # Create project logic
-            return f"Created project '{name}' using template '{template}'"
-
-# Use CLI as main interface
-app = App("CLITool")
-cli = MyCLI(app)
-app.register_component(lambda: cli)
-
-# Run interactive CLI
-cli.interactive()
-```
-
----
-
-## 📊 Observability & Metrics
-
-Comprehensive monitoring and metrics collection.
-
-### Metrics Collection
-
-```python
-from framework.metrics import MetricsManager
-
-metrics = MetricsManager()
-
-# Counter metrics
-metrics.increment_counter("api_requests", tags={"method": "GET", "status": "200"})
-
-# Gauge metrics
-metrics.record_gauge("memory_usage", 75.5, tags={"unit": "MB"})
-
-# Timer metrics
-start_time = metrics.start_timer("db_query")
-# ... database query
-duration = metrics.end_timer(start_time, "db_query")
-
-# Histogram metrics
-metrics.record_histogram("response_time", 0.15, tags={"endpoint": "/api/users"})
-```
-
-### Logging Integration
-
-```python
-from framework.logging import LogManager
-
-log_manager = LogManager()
-logger = log_manager.get_logger("my_module")
-
-# Configure different log levels
-logger.debug("Detailed debug info")
-logger.info("General information")
-logger.warning("Warning message")
-logger.error("Error occurred")
-
-# Structured logging
-logger.info("User login", extra={"user_id": 123, "ip": "192.168.1.1"})
-```
-
----
-
-## 🔌 Plugin System
-
-Extend UCore applications through plugins.
-
-### Creating a Plugin
-
-```python
-# plugins/my_plugin.py
-from framework.plugins import Plugin
+from ucore import Plugin
 
 class MyPlugin(Plugin):
     def register(self, app):
-        # Register services with app
-        app.container.register(MyService)
-
-        # Add routes
-        http_server = app.container.get(HttpServer)
-        @http_server.route("/my-plugin/greet", "GET")
-        def greet(request):
-            return {"message": "Hello from plugin!"}
-```
-
-### Loading Plugins
-
-```python
-from framework.plugins import PluginManager
-
-plugin_manager = PluginManager()
-
-# Load plugins from directory
-plugins = plugin_manager.load_plugins("/path/to/plugins")
-
-# Or specify individual plugins
-plugin_manager.load_plugin("./plugins/my_plugin.py")
+        # Plugin registration logic
+        pass
 ```
 
 ---
 
-## 🎯 Background Tasks
+## 🎮 **Simulation & Testing Framework**
 
-Robust background task processing with Celery.
-
-```python
-from framework.background import TaskQueueAdapter
-from framework.tasks import task
-
-# Create background task adapter
-bg_adapter = TaskQueueAdapter(app)
-app.register_component(lambda: bg_adapter)
-
-# Define background tasks
-@task("send-email")
-def send_email_task(user_email: str, subject: str, message: str):
-    # Send email logic here
-    print(f"Sending email to {user_email}: {subject}")
-
-# Execute task
-send_email_task.delay(
-    user_email="user@example.com",
-    subject="Welcome!",
-    message="Welcome to our service"
-)
-
-# Schedule recurring tasks
-@task("cleanup")
-def cleanup_old_files():
-    # Cleanup logic
-    print("Cleaning up old files...")
-```
+### **Built-in Simulation** (`framework/simulation/`)
+Comprehensive testing support:
+- **Entity Simulation** - Mock data generation and simulation
+- **Controller Management** - Simulation lifecycle management
+- **Scenario Testing** - Complex interaction testing
+- **Performance Simulation** - Load testing and profiling
+- **Integration Testing** - Component integration validation
 
 ---
 
-## 📝 Examples & Recipes
+## 📚 **Cache System**
 
-### Complete API Server
+### **Disk Cache Integration** (`framework/disk_cache.py`)
+High-performance caching with:
+- **Disk-Based Storage** - Persistent, high-volume caching
+- **Memory Management** - LRU eviction and size limits
+- **Indexing Support** - Fast lookup and query capabilities
+- **Expiration Policies** - Time-based and size-based eviction
+- **Multi-Level Caching** - Configurable cache hierarchies
 
+---
+
+## 🏆 **Advanced Features**
+
+### **Resource Management**
+- **Connection Pools** - Efficient database connection reuse
+- **Thread Pools** - CPU task offloading with resource limits
+- **Memory Pools** - Optimized memory usage patterns
+- **File Handles** - Automatic cleanup and resource management
+
+### **Security Features**
+- **Credential Management** - Secure configuration handling
+- **Access Control** - Component-level access patterns
+- **Audit Logging** - Comprehensive operation logging
+- **Security Events** - Security-relevant event tracking
+
+### **Performance Optimization**
+- **Async-First Design** - High-performance async patterns throughout
+- **Connection Reuse** - Multiple connection types (HTTP, DB, Redis)
+- **Resource Pooling** - Efficient resource utilization
+- **Lazy Loading** - On-demand resource initialization
+
+---
+
+## 🚀 **Getting Started**
+
+### **Quick Start - HTTP API**
 ```python
-# Complete API application with database
 from framework.app import App
-from framework.http import HttpServer
-from framework.db import SQLAlchemyAdapter
-from framework.metrics import MetricsManager
+from framework.web.http import HttpServer
 
-app = App("APIServer")
+# Create application
+app = App("MyAPI")
 
-# Database layer
-db_adapter = SQLAlchemyAdapter(app)
-app.register_component(lambda: db_adapter)
+# Create HTTP server
+http_server = HttpServer(app, host="0.0.0.0", port=8080)
 
-# HTTP server with routes
-http_server = HttpServer(app)
-
+# Add routes
 @http_server.route("/api/health", "GET")
-def health_check(request):
-    return {"status": "healthy", "uptime": "24h"}
+async def health_check():
+    return {"status": "healthy", "service": "MyAPI"}
 
-@http_server.route("/api/users", "GET")
-def list_users(request):
-    db = app.container.get(SQLAlchemyAdapter)
-    users = db.get_users()
-    return {"users": users}
+@http_server.route("/api/data", "GET")
+async def get_data():
+    return {"data": "Hello World", "timestamp": "2025-09-15"}
 
-@http_server.route("/api/users", "POST")
-def create_user(request):
-    data = request.json()
-    db = app.container.get(SQLAlchemyAdapter)
-    user = db.create_user(data)
-    return {"user": user}, 201
+# Register and start
+app.register_component(lambda: http_server)
+await app.start()  # Starts HTTP server on port 8080
+```
+
+### **Quick Start - UI Application (Flet)**
+```python
+from framework.app import App
+from framework.desktop.ui.flet_adapter import FletAdapter
+import flet as ft
+
+def flet_main(page: ft.Page):
+    page.title = "My App"
+    page.add(ft.Text("Hello from UCore + Flet!"))
+
+app = App("MyUI")
+flet_adapter = FletAdapter(app, target_func=flet_main)
+app.register_component(lambda: flet_adapter)
+await app.start()  # Opens web browser to http://localhost:8085
+```
+
+### **Advanced Example with Database & Redis**
+```python
+from framework.app import App
+from framework.web.http import HttpServer
+from framework.data.db import SQLAlchemyAdapter
+from framework.messaging.redis_adapter import RedisAdapter
+from framework.monitoring.metrics import HTTPMetricsAdapter
+
+app = App("FullStackApp")
+
+# Register components
+http_server = HttpServer(app, host="0.0.0.0", port=8080)
+db_adapter = SQLAlchemyAdapter(app)
+redis_adapter = RedisAdapter(app)
+metrics_adapter = HTTPMetricsAdapter(app)
 
 app.register_component(lambda: http_server)
+app.register_component(lambda: db_adapter)
+app.register_component(lambda: redis_adapter)
+app.register_component(lambda: metrics_adapter)
 
-# Add metrics
-metrics = MetricsManager()
-app.register_component(lambda: metrics)
+# Add routes with database access
+@http_server.route("/api/users", "GET")
+async def get_users():
+    async with db_adapter.get_session() as session:
+        # Your database queries here
+        return {"users": []}
 
-app.run(port=8000)
-```
+# Configure Redis pub/sub
+await redis_adapter.subscribe('notifications')
 
-### Real-Time Chat Application
-
-```python
-# Real-time chat with WebSocket support
-from framework.app import App
-from framework.ui.flet_adapter import FletAdapter
-
-def create_chat_app():
-    import flet as ft
-    import asyncio
-
-    async def main(page: ft.Page):
-        messages = ft.Column(scroll=ft.ScrollMode.AUTO)
-        text_field = ft.TextField(hint_text="Type a message...")
-        send_button = ft.ElevatedButton("Send")
-
-        async def send_message(e):
-            if not text_field.value:
-                return
-
-            # Add message to UI
-            messages.controls.append(
-                ft.Text(f"You: {text_field.value}")
-            )
-            text_field.value = ""
-            page.update()
-
-            # Process message in background
-            # (could send to WebSocket, save to DB, etc.)
-
-        send_button.on_click = send_message
-
-        await page.add_async(
-            ft.Text("Chat Application", style=ft.TextStyle(size=20)),
-            messages,
-            ft.Row([text_field, send_button])
-        )
-
-    return main
-
-app = App("ChatApp")
-flet_adapter = FletAdapter(app, target_func=create_chat_app())
-app.register_component(lambda: flet_adapter)
-
-app.run()
-```
-
-### Production Configuration
-
-```python
-# production_config.json
-{
-  "app": {
-    "name": "ProductionApp",
-    "version": "2.0.0",
-    "debug": false
-  },
-  "server": {
-    "host": "0.0.0.0",
-    "port": 8000,
-    "workers": 4
-  },
-  "database": {
-    "url": "postgresql://user:pass@host:5432/db",
-    "pool_size": 20,
-    "max_overflow": 30
-  },
-  "logging": {
-    "level": "WARNING",
-    "file": "/var/log/application.log"
-  },
-  "cache": {
-    "redis_url": "redis://localhost:6379/1",
-    "ttl": 3600
-  }
-}
-
-# Usage
-app = App("ProductionApp", config_path="./production_config.json")
-app.run()
+# Start application
+await app.start()
 ```
 
 ---
 
-This guide covers the core concepts and practical usage of the UCore Framework. Each section provides working examples that demonstrate real-world application development patterns.
+## 📋 **Architecture Patterns**
 
-For more advanced topics, see the detailed documentation in the `/docs` folder and examine the examples in the `/examples` directory.
+### **Recommended Application Structure**
+```
+/my-ucore-app/
+├── app.py                 # Main application entry point
+├── config.yml            # Application configuration
+├── plugins/              # Custom plugins directory
+│   ├── __init__.py
+│   └── analytics_plugin.py
+├── components/           # Custom component implementations
+│   ├── __init__.py
+│   ├── api_service.py
+│   └── background_worker.py
+├── models/               # Database models
+│   └── user.py
+├── routers/              # HTTP route handlers
+│   └── api.py
+└── tests/               # Test suites
+    ├── test_app.py
+    └── test_components.py
+```
+
+### **Best Practices**
+- **Component Design** - Keep components focused and testable
+- **Error Handling** - Use event publishing for error propagation
+- **Configuration Management** - Externalize all configuration
+- **Testing Strategy** - Use simulation framework for component testing
+- **Monitoring Setup** - Enable all observability features in production
+
+---
+
+## 🔧 **Deployment & Operations**
+
+### **Production Deployment**
+```bash
+# Development
+python app.py --config config.yml --log-level DEBUG
+
+# Production with plugins
+python app.py --config production.yml --plugins-dir ./plugins --log-level INFO
+
+# With process manager (systemd/pm2)
+[Service]
+ExecStart=/usr/bin/python3 /path/to/app.py --config prod.yml
+WorkingDirectory=/path/to/my-app
+Restart=always
+```
+
+### **Environment Variables**
+```bash
+export DATABASE_URL="postgresql://user:pass@host:5432/db"
+export REDIS_URL="redis://localhost:6379/0"
+export LOG_LEVEL="INFO"
+export METRICS_ENABLED="true"
+export HTTP_HOST="0.0.0.0"
+export HTTP_PORT="8080"
+```
+
+### **Health Checks**
+- **HTTP Health Endpoint** - Built-in `/health` endpoint
+- **Metrics Endpoint** - Prometheus `/metrics` integration
+- **Component Health** - Individual component health checks
+- **Database Health** - Connection status and performance metrics
+
+---
+
+## � **Migration Guide**
+
+### **From Traditional Frameworks**
+```python
+# Traditional Flask/FastAPI
+from flask import Flask
+app = Flask(__name__)
+
+# UCore equivalent
+from ucore import App, HttpServer
+
+app = App("MyApp")
+app.register_component(HttpServer(app))
+
+@app.http.route("/endpoint")
+async def handle_request():
+    return {"data": "Hello World"}
+```
+
+---
+
+## 📝 **API Reference**
+
+### **Core Classes**
+- `App` - Main application orchestrator
+- `Component` - Base component class
+- `Container` - Dependency injection container
+- `EventBus` - Event publishing system
+- `Config` - Configuration management
+
+### **Component Classes**
+- `HttpServer` - HTTP server component
+- `SQLAlchemyAdapter` - Database adapter
+- `RedisAdapter` - Redis client
+- `MetricsAdapter` - Monitoring system
+- `DiskCacheAdapter` - Caching system
+
+### **Key Functions**
+- `app.run()` - Start application with CLI handling
+- `app.register_component()` - Register component instance/class/factory
+- `event_bus.publish()` - Publish events to subscribers
+- `container.get()` - Resolve services from DI container
+
+---
+
+## 🌟 **Performance Characteristics**
+
+| Metric | Performance | Details |
+|--------|------------|---------|
+| **HTTP Throughput** | ⚡ **High** | aiohttp-based async processing |
+| **Database Ops** | ⚡ **High** | Async SQLAlchemy with connection pooling |
+| **Memory Usage** | 🟢 **Optimized** | Component-based with cleanup |
+| **CPU Efficiency** | ⚡ **High** | Async patterns with selective threading |
+| **Scalability** | 🚀 **Excellent** | Designed for horizontal scaling |
+| **Observability** | 📊 **Complete** | Full monitoring and metrics integration |
+
+---
+
+## 🎉 **UCore Success Stories**
+
+✓ **Web APIs** - High-performance REST APIs with monitoring
+✓ **Data Processing** - ETL pipelines with progress tracking
+✓ **Real-time Apps** - Live user interfaces with state synchronization
+✓ **Microservices** - Event-driven distributed architectures
+✓ **Desktop Apps** - Cross-platform GUI applications
+✓ **Background Jobs** - Distributed task processing systems
+
+---
+
+## 📞 **Support & Community**
+
+- **Documentation** - Comprehensive framework documentation
+- **Examples** - Working example applications in `/examples`
+- **Testing** - Complete test suite with examples
+- **Contributing** - Open contribution model
+- **Enterprise Support** - Professional support available
+
+---
+
+## 🎯 **Summary**
+
+**UCore Framework** is the **ultimate enterprise-grade Python application framework** providing:
+
+- ✅ **Complete Architecture** - Component-based with async-first design
+- ✅ **Production Ready** - Observability, monitoring, and error handling
+- ✅ **Highly Extensible** - Plugin system and component overriding
+- ✅ **Multi-Platform** - Works on web, desktop, and server platforms
+- ✅ **Developer Friendly** - Comprehensive tooling and documentation
+- ✅ **Performance Focused** - Optimized for high-throughput applications
+
+**Perfect for building sophisticated applications that require reliability, observability, and scalability!** 🚀
+
+---
+
+*Framework Version: 1.0.0 | Documentation Date: September 2025*

@@ -2,50 +2,67 @@
 """
 UCore: Enterprise-Grade Framework for Python Applications
 
-This framework provides:
-- Component-based architecture with dependency injection
-- Comprehensive observability (Prometheus + OpenTelemetry)
-- Background task processing with Redis/Celery
-- Professional CLI tools and user interfaces
-- Database operations with SQLAlchemy
-- Plugin system for extensibility
-- Configuration management with YAML support
-- Simulation and entity management
+Domain-Driven Architecture organized by application use cases:
+
+- Core: Fundamental framework components
+- Web: HTTP servers and web applications
+- Desktop: GUI desktop applications
+- Messaging: Event-driven communication and message passing
+- Data: Database operations, caching, and persistence
+- Processing: Background tasks, workers, and CLI tools
+- Monitoring: Metrics, observability, and logging
+- Simulation: Testing and simulation environments
 """
 
 __version__ = "1.0.0"
 __author__ = "UCore Team"
 
-# Core exports
-from .app import App
-from .component import Component
-from .config import Config
-from .di import Container, Scope
+# Legacy core exports (backward compatibility) - Direct imports for now
+from .core.app import App
+from .core.component import Component
+from .core.di import Container, Scope
+from .core.config import Config
 
-# Simulation exports
+# Domain-specific imports (new structure)
+from . import core
+from . import web
+from . import desktop
+from . import messaging
+from . import data
+from . import processing
+from . import monitoring
 from . import simulation
 
-# UI exports
-from . import ui
+# Event system from messaging domain - Direct imports for now
+from .messaging.event_bus import EventBus
+from .messaging.events import (
+    Event,
+    ComponentStartedEvent, ComponentStoppedEvent,
+    AppStartedEvent, AppStoppedEvent,
+    ConfigUpdatedEvent, UserEvent, EventFilter
+)
 
-# Utility exports
-from .logging import Logging
-from .plugins import Plugin
-
-# Concurrent tasks exports
-from . import cpu_tasks
+# Optional CPU tasks import to avoid circular imports
+try:
+    from . import cpu_tasks
+    _cpu_tasks_available = True
+except (ImportError, AttributeError):
+    _cpu_tasks_available = False
 
 __all__ = [
     '__version__',
     '__author__',
-    'App',
-    'Component',
-    'Config',
-    'Container',
-    'Scope',
-    'simulation',
-    'ui',
-    'Logging',
-    'Plugin',
-    'cpu_tasks'
+    # Legacy exports
+    'App', 'Component', 'Config', 'Container', 'Scope',
+    # New domain structure
+    'core', 'web', 'desktop', 'messaging', 'data', 'processing', 'monitoring', 'simulation',
+    # Supporting exports
+    'Event', 'EventBus',
+    'ComponentStartedEvent', 'ComponentStoppedEvent',
+    'AppStartedEvent', 'AppStoppedEvent',
+    'ConfigUpdatedEvent', 'UserEvent', 'EventFilter'
 ]
+
+# Add optional exports if available
+if _cpu_tasks_available:
+    __all__.append('cpu_tasks')

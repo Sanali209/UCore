@@ -22,8 +22,8 @@ import asyncio
 import signal
 sys.path.insert(0, 'd:/UCore')
 
-from framework.app import App
-from framework.redis_adapter import RedisAdapter
+from framework import App
+from framework.messaging.redis_adapter import RedisAdapter
 
 
 def create_subscriber_app():
@@ -195,58 +195,76 @@ def signal_handler(signum, frame):
     # The asyncio event loop will handle cleanup properly
 
 
-def main():
-    """
-    Main entry point for the Redis subscriber example.
-    """
-    print("🚀 UCore Redis Message Subscriber Example")
-    print("=" * 60)
-    print()
-    print("This application SUBSCRIBES TO and consumes messages from Redis.")
-    print("Start the publisher application to see live message processing.")
-    print()
-    print("Prerequisites:")
-    print("  ✅ Publisher app running (python main.py)")
-    print("  ❌ Redis server running (redis://localhost:6379/0)")
-    print()
+async def main():
+    """Main demonstration function."""
+    print("🏗️ UCORE REDIS MESSAGE SUBSCRIBER DEMO")
+    print("=" * 50)
 
-    # Register signal handler for graceful shutdown
-    signal.signal(signal.SIGINT, signal_handler)
-    signal.signal(signal.SIGTERM, signal_handler)
+    # Create the subscriber application
+    app = create_subscriber_app()
 
-    # Show test message examples
-    demo_message_sending()
+    print("\n🚀 Starting Redis Message Subscriber...")
 
-    print("🔄 SUBSCRIBED CHANNELS:")
-    print("  • notifications - Notification messages")
-    print("  • alerts - High-priority alerts")
-    print("  • general - General-purpose messages")
-    print()
+    try:
+        # Start the application (this initializes all components)
+        await app.start()
 
-    print("🔄 SUBSCRIBED STREAMS:")
-    print("  • user_events - User action events")
-    print("  • system_events - System monitoring events")
-    print()
+        print("\n✅ REDIS SUBSCRIBER STARTED SUCCESSFULLY!")
+        print("\n📊 Subscriber Status:")
+        print("   🔴 Redis: Connected")
+        print("   📢 Event Bus: Connected")
+        print("   📊 Message Processing: Active")
 
-    print("🎯 MESSAGE PROCESSING:")
-    print("  • Auto-acknowledgment of processed stream messages")
-    print("  • Error handling and logging")
-    print("  • Graceful shutdown on signal")
-    print()
+        print("\n🔄 SUBSCRIBED CHANNELS:")
+        print("   • notifications - Notification messages")
+        print("   • alerts - High-priority alerts")
+        print("   • general - General-purpose messages")
 
-    print("💡 Test the subscriber:")
-    print("1. Start this subscriber: python subscriber.py")
-    print("2. In another terminal, start publisher: python main.py")
-    print("3. Use curl commands above to send test messages")
-    print("4. Watch this terminal for message processing logs")
-    print()
-    print("⚡ Ready to process Redis messages...")
-    print("=" * 60)
+        print("\n🔄 SUBSCRIBED STREAMS:")
+        print("   • user_events - User action events")
+        print("   • system_events - System monitoring events")
 
-    # Create and run the subscriber application
-    subscriber_app = create_subscriber_app()
-    subscriber_app.run()
+        print("\n🎯 MESSAGE PROCESSING FEATURES:")
+        print("   🏗️  UCore Component Architecture")
+        print("   🔗 Event-Driven Message Processing")
+        print("   🔴 Redis Pub/Sub Consumer")
+        print("   📊 Redis Stream Consumer Groups")
+        print("   ✅ Auto-Acknowledgment")
+        print("   🔄 Graceful Error Handling")
+
+        print("\n💡 TESTING THE SUBSCRIBER:")
+
+        print("\n1. In another terminal, start publisher:")
+        print("   python examples/redis_messaging/main.py")
+
+        print("\n2. Send test messages to see processing:")
+        print("   See curl examples at: http://localhost:8080/ (when publisher is running)")
+
+        print("\n🎯 SUBSCRIBER RUNNING - Messages will be processed automatically")
+        print("\n🎯 PUBLISHER RUNNING - Press Ctrl+C to stop both services")
+
+        # Register signal handler for graceful shutdown
+        def shutdown_handler(signum, frame):
+            print("\n\n🛑 SUBSCRIBER INTERRUPTED BY USER")
+            asyncio.get_running_loop().stop()
+
+        signal.signal(signal.SIGINT, shutdown_handler)
+        signal.signal(signal.SIGTERM, shutdown_handler)
+
+        # Keep the service running
+        while True:
+            await asyncio.sleep(1)
+
+    except KeyboardInterrupt:
+        print("\n\n🛑 SUBSCRIBER INTERRUPTED BY USER")
+    except Exception as e:
+        print(f"❌ SUBSCRIBER ERROR: {e}")
+        raise
+    finally:
+        print("\n🏁 CLEANING UP SUBSCRIBER...")
+        await app.stop()
+        print("✨ SHUTDOWN COMPLETE")
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

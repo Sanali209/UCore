@@ -23,20 +23,27 @@ python examples/screen_capture_demo/main.py
 import asyncio
 import sys
 import os
-from pathlib import Path
 
-# Set up the module path to find the framework
-current_dir = Path(__file__).resolve().parent
-ucore_root = current_dir.parent
+# This allows the example to be run from the root of the repository
+sys.path.insert(0, 'd:/UCore')
 
-# Add the UCore root to sys.path if not already there
-if str(ucore_root) not in sys.path:
-    sys.path.insert(0, str(ucore_root))
-
-# Now import the framework modules
-from framework.app import App
-from framework.simulation.entity import EnvironmentEntity
+from framework import App
 from framework.simulation.controllers import ScreenCapturer
+from framework.core.component import Component
+
+class MockEntity(Component):
+    """Simple mock entity to hold controllers."""
+    def __init__(self, name):
+        super().__init__()
+        self.name = name
+        self._controllers = []
+
+    def add_controller(self, controller):
+        controller.entity = self
+        self._controllers.append(controller)
+
+    def get_controllers(self):
+        return self._controllers
 
 class ScreenCaptureDemo(App):
     """Demo application showing ScreenCapturer functionality."""
@@ -45,9 +52,9 @@ class ScreenCaptureDemo(App):
         super().__init__("ScreenCaptureDemo")
 
         # Create entities with different screen capture configurations
-        self.full_screen_entity = EnvironmentEntity("FullScreenCapturer")
-        self.region_entity = EnvironmentEntity("RegionCapturer")
-        self.fast_capture_entity = EnvironmentEntity("FastCapturer")
+        self.full_screen_entity = MockEntity("FullScreenCapturer")
+        self.region_entity = MockEntity("RegionCapturer")
+        self.fast_capture_entity = MockEntity("FastCapturer")
 
         # Setup controllers with different configurations
         self.setup_controllers()

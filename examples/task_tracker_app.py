@@ -64,8 +64,11 @@ except ImportError:
 # UCore Framework imports (only if Flet is available)
 if flet_available:
     from framework.app import App
-    from framework.ui.flet_adapter import FletAdapter
+    from framework.desktop.ui.flet_adapter import FletAdapter
     print("✅ UCore Framework loaded successfully")
+else:
+    App = None
+    FletAdapter = None
 
 
 # Task data model
@@ -169,108 +172,117 @@ class TaskTracker:
             print(f"Error saving tasks: {e}")
 
 
-# Task card component (simplified)
-def create_task_card(task: Task, tracker: TaskTracker, page: ft.Page, refresh_callback):
-    def change_status(new_status: TaskStatus):
-        tracker.update_task(task.id, status=new_status)
-        refresh_callback()
+# Note: create_task_card function is defined conditionally below when flet_available is True
 
-    def delete_task():
-        tracker.delete_task(task.id)
-        refresh_callback()
 
-    return ft.Card(
-        content=ft.Container(
-            content=ft.Column([
-                ft.Row([
-                    ft.Text(task.title, size=16, weight=ft.FontWeight.BOLD),
-                    ft.ElevatedButton("✗", on_click=lambda _: delete_task()),
-                ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
-                ft.Text(f"Status: {task.status}", size=12),
-                ft.Text(f"Priority: {task.priority}", size=12),
-                ft.Text(task.description, size=12, color="grey700") if task.description else None,
-            ]),
-            padding=15
+# Main Flet UI function - only available when Flet is loaded
+if flet_available:
+    # Task card component (simplified)
+    def create_task_card(task: Task, tracker: TaskTracker, page: ft.Page, refresh_callback):
+        def change_status(new_status: TaskStatus):
+            tracker.update_task(task.id, status=new_status)
+            refresh_callback()
+
+        def delete_task():
+            tracker.delete_task(task.id)
+            refresh_callback()
+
+        # Build controls list dynamically to avoid None elements
+        controls = [
+            ft.Row([
+                ft.Text(task.title, size=16, weight=ft.FontWeight.BOLD),
+                ft.ElevatedButton("✗", on_click=lambda _: delete_task()),
+            ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
+            ft.Text(f"Status: {task.status}", size=12),
+            ft.Text(f"Priority: {task.priority}", size=12),
+        ]
+
+        # Only add description if it exists
+        if task.description:
+            controls.append(ft.Text(task.description, size=12, color="grey700"))
+
+        return ft.Card(
+            content=ft.Container(
+                content=ft.Column(controls),
+                padding=15
+            )
         )
-    )
 
+    def flet_main(page: ft.Page):
+        """
+        Main Flet UI function that defines the task tracker interface.
+        """
+        page.title = "UCore Task Tracker"
+        page.vertical_alignment = ft.MainAxisAlignment.START
 
-# Main Flet UI function
-def flet_main(page: ft.Page):
-    """
-    Main Flet UI function that defines the task tracker interface.
-    """
-    page.title = "UCore Task Tracker"
-    page.vertical_alignment = ft.MainAxisAlignment.START
+        # Initialize task tracker
+        tracker = TaskTracker()
 
-    # Initialize task tracker
-    tracker = TaskTracker()
+        # UI components
+        title_text = ft.Text("Task Tracker", size=24, weight=ft.FontWeight.BOLD)
 
-    # UI components
-    title_text = ft.Text("Task Tracker", size=24, weight=ft.FontWeight.BOLD)
+        # Input fields for new task
+        title_field = ft.TextField(label="Task Title", width=300)
+        desc_field = ft.TextField(label="Description", multiline=True, width=300)
 
-    # Input fields for new task
-    title_field = ft.TextField(label="Task Title", width=300)
-    desc_field = ft.TextField(label="Description", multiline=True, width=300)
+        # Add new task function
+        def add_task(e):
+            if not title_field.value:
+                return
+            task = Task(
+                id=f"task_{len(tracker.tasks) + 1}",
+                title=title_field.value,
+                description=desc_field.value or "",
+                status=TaskStatus.TODO,
+                priority=TaskPriority.MEDIUM,
+                created_at=datetime.now()
+            )
+            tracker.add_task(task)
+            # Clear fields and refresh tasks list
+            title_field.value = ""
+            desc_field.value = ""
+            refresh_tasks()
 
-    # Add new task function
-    def add_task(e):
-        if not title_field.value:
-            return
-        task = Task(
-            id=f"task_{len(tracker.tasks) + 1}",
-            title=title_field.value,
-            description=desc_field.value or "",
-            status=TaskStatus.TODO,
-            priority=TaskPriority.MEDIUM,
-            created_at=datetime.now()
+        # Add task button
+        add_button = ft.ElevatedButton("Add Task", icon="add", on_click=add_task)
+
+        # Input area
+        input_area = ft.Column([
+            ft.Text("Add New Task", size=16, weight=ft.FontWeight.BOLD),
+            title_field,
+            desc_field,
+            add_button
+        ])
+
+        # Tasks list container
+        tasks_container = ft.Column([])
+
+        def refresh_tasks():
+            """Refresh the tasks list display."""
+            tasks_container.controls.clear()
+            for task in tracker.get_tasks():
+                card = create_task_card(task, tracker, page, refresh_tasks)
+                tasks_container.controls.append(card)
+            page.update()
+
+        # Add components to page
+        page.add(
+            ft.Container(
+                content=ft.Column([
+                    title_text,
+                    ft.Divider(),
+                    input_area,
+                    ft.Divider(),
+                    ft.Text("Current Tasks", size=18, weight=ft.FontWeight.BOLD),
+                    ft.Container(content=tasks_container, height=400)
+                ]),
+                padding=20,
+                expand=True
+            )
         )
-        tracker.add_task(task)
-        # Clear fields and refresh tasks list
-        title_field.value = ""
-        desc_field.value = ""
+
+        # Initial load
         refresh_tasks()
-
-    # Add task button
-    add_button = ft.ElevatedButton("Add Task", icon="add", on_click=add_task)
-
-    # Input area
-    input_area = ft.Column([
-        ft.Text("Add New Task", size=16, weight=ft.FontWeight.BOLD),
-        title_field,
-        desc_field,
-        add_button
-    ])
-
-    # Tasks list container
-    tasks_container = ft.Column([])
-
-    def refresh_tasks():
-        """Refresh the tasks list display."""
-        tasks_container.controls.clear()
-        for task in tracker.get_tasks():
-            card = create_task_card(task, tracker, page, refresh_tasks)
-            tasks_container.controls.append(card)
-        page.update()
-
-    # Add components to page
-    page.add(
-        ft.Container(
-            content=ft.Column([
-                title_text,
-                ft.Divider(),
-                input_area,
-                ft.Divider(),
-                ft.Text("Current Tasks", size=18, weight=ft.FontWeight.BOLD),
-                ft.Container(content=tasks_container, height=400)
-            ]),
-            padding=20,
-            expand=True
-        )
-    )
-
-    # Initial load
-    refresh_tasks()
 
 
 # Application factory following the UCore pattern

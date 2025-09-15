@@ -5,7 +5,7 @@ Test the new UCore Settings Module - YAML-based persistence
 import sys
 sys.path.insert(0, 'd:/UCore')  # Add current directory to path
 
-from framework.settings import SettingsManager
+from framework.core.settings import SettingsManager
 
 def test_settings_module():
     print("🧪 Testing UCore Settings Module")

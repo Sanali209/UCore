@@ -29,10 +29,10 @@ import random
 import time
 sys.path.insert(0, 'd:/UCore')
 
-from framework.app import App
-from framework.http import HttpServer
-from framework.metrics import HTTPMetricsAdapter, counter, histogram, gauge
-from framework.di import Depends
+from framework import App
+from framework.web import HttpServer
+from framework.monitoring.metrics import HTTPMetricsAdapter, counter, histogram, gauge, generate_latest, CONTENT_TYPE_LATEST
+from framework.core.di import Depends
 import aiohttp
 from aiohttp import web
 
@@ -155,9 +155,8 @@ def create_metrics_app():
         Endpoint to serve Prometheus metrics.
         This will be scraped by Prometheus for monitoring.
         """
-        from framework.metrics import generate_latest, CONTENT_TYPE_LATEST
-
-        metrics_output = generate_latest().decode('utf-8')
+        from prometheus_client import REGISTRY
+        metrics_output = generate_latest(REGISTRY).decode('utf-8')
 
         # Log some basic stats about the metrics
         lines = metrics_output.split('\n')

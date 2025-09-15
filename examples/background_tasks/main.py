@@ -22,10 +22,10 @@ Usage:
 import sys
 sys.path.insert(0, 'd:/UCore')
 
-from framework.app import App
-from framework.http import HttpServer
-from framework.background import TaskQueueAdapter
-from framework.di import Depends
+from framework import App
+from framework.web import HttpServer
+from framework.processing.background import TaskQueueAdapter
+from framework.core.di import Depends
 import asyncio
 from aiohttp import web
 
@@ -64,7 +64,7 @@ def create_background_app():
 
         # Send task to Celery
         task_result = adapter.send_task(
-            'framework.tasks.process_data',
+            'framework.processing.tasks.process_data',
             args=[input_data]
         )
 
@@ -88,7 +88,7 @@ def create_background_app():
         body = data.get('body', 'Test body')
 
         task_result = adapter.send_task(
-            'framework.tasks.send_email',
+            'framework.processing.tasks.send_email',
             args=[to_email, subject, body]
         )
 
@@ -110,7 +110,7 @@ def create_background_app():
         db_url = data.get('database_url', 'sqlite:///test.db')
 
         task_result = adapter.send_task(
-            'framework.tasks.backup_database',
+            'framework.processing.tasks.backup_database',
             args=[db_url]
         )
 

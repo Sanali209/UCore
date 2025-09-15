@@ -31,16 +31,16 @@ Endpoints:
 
 CLI Demo:
     # View system status
-    curl http://localhost:8080/health
-    curl http://localhost:8080/ready
-    curl http://localhost:8080/metrics
+    curl http://localhost:8090/health
+    curl http://localhost:8090/ready
+    curl http://localhost:8090/metrics
 
     # Test API with metrics
-    curl http://localhost:8080/api/users
-    curl -X POST http://localhost:8080/api/users -H "Content-Type: application/json" -d '{"name":"John","email":"john@example.com"}'
+    curl http://localhost:8090/api/users
+    curl -X POST http://localhost:8090/api/users -H "Content-Type: application/json" -d '{"name":"John","email":"john@example.com"}'
 
     # Check metrics
-    curl http://localhost:8080/metrics
+    curl http://localhost:8090/metrics
 """
 
 import asyncio
@@ -51,11 +51,14 @@ from dataclasses import dataclass
 from aiohttp import web
 import aiohttp
 
-from framework.app import App
-from framework.http import HttpServer
-from framework.observability import Observability, metrics_counter, metrics_histogram, trace_function
-from framework.background import TaskQueueAdapter
-from framework.tasks import task
+import sys
+sys.path.insert(0, 'd:/UCore')
+
+from framework import App
+from framework.web import HttpServer
+from framework.monitoring.observability import Observability, metrics_counter, metrics_histogram, trace_function
+from framework.processing.background import TaskQueueAdapter
+from framework.processing.tasks import task
 
 
 @dataclass
@@ -163,10 +166,12 @@ def create_observability_demo_app():
     user_service = UserService()
 
     # Register services in DI container
-    app.container.add_component(lambda: user_service, name="UserService")
+    from framework.core.di import Container
+    if isinstance(app.container, Container):
+        app.container.register_instance(user_service, UserService)
 
     # Initialize components
-    http_server = HttpServer(app)
+    http_server = HttpServer(app, port=8090)  # Use different port to avoid conflicts
     observability = Observability(app)
     task_adapter = TaskQueueAdapter(app)
 

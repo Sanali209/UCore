@@ -1,0 +1,19 @@
+{
+  "REDIS_HOST": "redis.mycloud.com",
+  "REDIS_PORT": 6380,
+  "REDIS_PASSWORD": "mysecurepassword",
+  "REDIS_DB": 1,
+  "REDIS_BRIDGE": {
+    "eventbus_to_redis_enabled": true,
+    "redis_to_eventbus_enabled": false,
+    "forward_app_events": true,
+    "forward_component_events": true,
+    "forward_config_events": false,
+    "instance_id": "production_app_01",
+    "channels": {
+      "app_started": "myapp.production.app.started",
+      "component_started": "myapp.production.component.started",
+      "config_updated": "myapp.production.config.updated"
+    }
+  }
+}

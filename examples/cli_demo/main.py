@@ -42,10 +42,11 @@ import sys
 import os
 sys.path.insert(0, 'd:/UCore')
 
-from framework.app import App
-from framework.background import TaskQueueAdapter
-from framework.http import HttpServer
-from framework.tasks import task
+from framework import App
+from framework.processing.background import TaskQueueAdapter
+from framework.web import HttpServer
+from framework.processing.tasks import task
+from framework.core.di import Depends
 
 
 def create_demo_app():
@@ -69,8 +70,8 @@ def create_demo_app():
         This task would be processed by background workers
         """
         print(f"📧 Sending welcome email to {email} (user: {user_id})")
-        import asyncio
-        asyncio.sleep(2)  # Simulate processing time
+        import time
+        time.sleep(2)  # Simulate processing time
         print(f"✅ Welcome email sent to {email}")
         return f"Email sent to {email}"
 
@@ -80,8 +81,8 @@ def create_demo_app():
         Demo task: Process data batch
         """
         print(f"📊 Processing data batch {batch_id} with {data_size} records")
-        import asyncio
-        asyncio.sleep(1.5)  # Simulate processing
+        import time
+        time.sleep(1.5)  # Simulate processing
         print(f"✅ Data batch {batch_id} processed successfully")
         return f"Processed {data_size} records"
 
@@ -91,14 +92,14 @@ def create_demo_app():
         Demo task: Cleanup old files
         """
         print(f"🧹 Cleaning up files in {path} older than {days_old} days")
-        import asyncio
-        asyncio.sleep(1)  # Simulate cleanup
+        import time
+        time.sleep(1)  # Simulate cleanup
         print(f"✅ Cleanup completed in {path}")
         return "Cleanup completed"
 
     # HTTP endpoints to trigger tasks (for demo purposes)
     @http_server.route("/email", "POST")
-    async def trigger_email_endpoint(request, adapter=TaskQueueAdapter(app)):
+    async def trigger_email_endpoint(request, adapter=Depends(lambda: task_adapter)):
         """
         POST /email
         {"user_id": "123", "email": "user@example.com"}
@@ -205,7 +206,7 @@ def main():
 
     # If arguments provided, run as CLI
     try:
-        from framework.cli import main as cli_main
+        from framework.processing.cli import main as cli_main
         cli_main()
     except SystemExit:
         # handle typer Exit

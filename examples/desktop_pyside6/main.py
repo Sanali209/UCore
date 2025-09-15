@@ -16,13 +16,22 @@ import asyncio
 from PySide6.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget, QLabel
 from PySide6.QtCore import QTimer
 
+#!/usr/bin/env python3
+"""
+Desktop Application Example - Domain-Driven Structure
+
+This example demonstrates the new domain-driven structure:
+- Desktop domain: PySide6/Flet UI adapters
+- Core domain: Component, Config
+- Monitoring domain: Logging
+"""
+
 # This allows the example to be run from the root of the repository
 sys.path.insert(0, 'd:/UCore')
 
-from framework.app import App
-from framework.ui.pyside6_adapter import PySide6Adapter
-from framework.config import Config
-from framework.component import Component
+from framework import App
+from framework.desktop import PySide6Adapter
+from framework.core import Config, Component
 
 
 class MainWindow(QMainWindow):
