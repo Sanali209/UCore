@@ -31,7 +31,12 @@ from . import messaging
 from . import data
 from . import processing
 from . import monitoring
-from . import simulation
+# Simulation domain - optional import
+try:
+    from . import simulation
+except ImportError:
+    import sys
+    sys.modules['framework.simulation'] = None
 
 # Event system from messaging domain - Direct imports for now
 from .messaging.event_bus import EventBus

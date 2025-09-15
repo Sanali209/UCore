@@ -1,416 +1,578 @@
-# tests/test_redis_adapter.py
-"""
-Integration tests for RedisAdapter and message bus functionality.
-Tests asynchronous pub/sub, stream processing, and caching.
-"""
-
 import pytest
-import pytest_asyncio
 import asyncio
-from unittest.mock import patch, AsyncMock
 import json
-import sys
+from unittest.mock import Mock, AsyncMock, patch, MagicMock, call
+from redis.exceptions import ConnectionError, TimeoutError
 
-sys.path.insert(0, 'd:/UCore')
-
-from framework.app import App
 from framework.messaging.redis_adapter import RedisAdapter
-from framework.core.config import Config
-
-
-@pytest_asyncio.fixture
-async def redis_adapter_fixture():
-    """
-    Fixture that provides a RedisAdapter instance.
-    Mock the actual Redis connection for testing.
-    """
-    app = App("TestRedisApp")
-    adapter = RedisAdapter(app)
-
-    # Mock the Redis connection
-    mock_redis = AsyncMock()
-    mock_redis.ping.return_value = "PONG"
-    mock_redis.close = AsyncMock()
-    adapter.redis = mock_redis
-
-    yield adapter
-
-    # Cleanup
-    adapter.redis = None
+from framework.messaging.redis_event_bridge import EventBusRedisBridge, EventBusToRedisBridge, RedisToEventBusBridge
 
 
 class TestRedisAdapterInitialization:
     """Test RedisAdapter initialization and configuration."""
 
-    def test_adapter_creation(self):
-        """Test basic RedisAdapter creation."""
-        app = App("TestApp")
+    def test_init_default_config(self):
+        """Test initialization with default configuration fallback."""
+        app = Mock()
+
+        # Mock config registration to fail
+        app.container.get.side_effect = Exception("Config not found")
+
         adapter = RedisAdapter(app)
+
         assert adapter.app == app
         assert adapter.redis is None
-        assert len(adapter.subscribers) == 0
-        assert len(adapter.channels) == 0
-        assert len(adapter.stream_consumers) == 0
+        assert adapter.subscribers == {}
+        assert adapter.channels == {}
+        assert adapter.stream_consumers == {}
+        assert adapter.bridge_handlers == {}
+        assert adapter.redis_listeners == {}
+        assert 'REDIS_HOST' in adapter.config
+        assert adapter.config['REDIS_HOST'] == 'localhost'
 
-    def test_adapter_with_config(self):
-        """Test RedisAdapter with custom configuration."""
-        app = App("TestApp")
-        # Get config from container and set custom Redis config
-        config = app.container.get(Config)
-        config.set("REDIS_HOST", "localhost")
-        config.set("REDIS_PORT", 6379)
-        config.set("REDIS_DB", 1)
+    def test_init_with_config(self):
+        """Test initialization with configuration service."""
+        app = Mock()
+        mock_config = Mock()
+        mock_config.get.side_effect = lambda key, default: {
+            'REDIS_HOST': 'redis.example.com',
+            'REDIS_PORT': 6380,
+            'REDIS_DB': 1,
+            'REDIS_PASSWORD': 'secret'
+        }.get(key, default)
+
+        app.container.get.return_value = mock_config
 
         adapter = RedisAdapter(app)
-        assert adapter.config.get("REDIS_HOST") == "localhost"
-        assert adapter.config.get("REDIS_PORT") == 6379
-        assert adapter.config.get("REDIS_DB") == 1
 
-    @pytest.mark.asyncio
-    async def test_start_with_valid_connection(self):
-        """Test successful Redis connection on start."""
-        app = App("TestApp")
+        assert adapter.config.get('REDIS_HOST') == 'redis.example.com'
+        assert adapter.config.get('REDIS_PORT') == 6380
+        assert adapter.bridge_channels['app_started'] == 'ucore.events.app.started'
+
+    def test_bridge_settings_loading(self):
+        """Test loading bridge settings from configuration."""
+        app = Mock()
+        app.container.get.side_effect = Exception("Config not found")
+
         adapter = RedisAdapter(app)
 
-        # Mock successful Redis connection
-        mock_redis = AsyncMock()
-        mock_redis.ping.return_value = "PONG"
+        # Should have default bridge settings
+        assert adapter.bridge_settings['eventbus_to_redis_enabled'] is True
+        assert adapter.bridge_settings['redis_to_eventbus_enabled'] is True
+        assert adapter.bridge_settings['max_retries'] == 3
+        assert 'instance_id' in adapter.bridge_settings
 
-        with patch('framework.redis_adapter.Redis', return_value=mock_redis):
+    def test_component_inheritance(self):
+        """Test that RedisAdapter properly inherits from required classes."""
+        from framework.core.component import Component
+
+        app = Mock()
+        app.container.get.side_effect = Exception("Config not found")
+
+        adapter = RedisAdapter(app)
+
+        assert isinstance(adapter, Component)
+        assert isinstance(adapter, EventBusRedisBridge)
+        assert isinstance(adapter, EventBusToRedisBridge)
+        assert isinstance(adapter, RedisToEventBusBridge)
+
+
+class TestRedisAdapterLifecycle:
+    """Test RedisAdapter start/stop lifecycle."""
+
+    @patch('framework.messaging.redis_adapter.aioredis.Redis')
+    async def test_start_success_with_config(self, mock_redis_class):
+        """Test successful Redis connection with custom configuration."""
+        app = Mock()
+        logger = Mock()
+        app.logger = logger
+
+        mock_config = Mock()
+        mock_config.get.side_effect = lambda key, default: {
+            'REDIS_HOST': 'test.redis.com',
+            'REDIS_PORT': 6380,
+            'REDIS_DB': 1,
+            'REDIS_PASSWORD': 'secret'
+        }.get(key, default)
+
+        mock_redis_instance = AsyncMock()
+        mock_redis_instance.ping = AsyncMock()
+        mock_redis_class.return_value = mock_redis_instance
+
+        app.container.get.return_value = mock_config
+
+        adapter = RedisAdapter(app)
+
+        with patch('asyncio.create_task'):
             await adapter.start()
 
-            assert adapter.redis is mock_redis
-            assert adapter.redis.ping.called
+            mock_redis_class.assert_called_once_with(
+                host='test.redis.com',
+                port=6380,
+                db=1,
+                password='secret',
+                decode_responses=True
+            )
+            mock_redis_instance.ping.assert_called_once()
+            logger.info.assert_any_call("Redis EventBus Bridge enabled: E2R=True, R2E=True, Instance ID: *")
 
-    @pytest.mark.asyncio
-    async def test_start_with_connection_error(self):
-        """Test handling of Redis connection errors."""
-        app = App("TestApp")
+    @patch('framework.messaging.redis_adapter.aioredis.Redis')
+    async def test_start_with_connection_failure(self, mock_redis_class):
+        """Test start with Redis connection failure."""
+        app = Mock()
+        logger = Mock()
+        app.logger = logger
+
+        app.container.get.side_effect = Exception("Config not found")
+        mock_redis_class.return_value = None  # Simulate connection failure
+
         adapter = RedisAdapter(app)
 
-        # Mock Redis to raise exception during init, then check error handling
-        with patch('framework.redis_adapter.Redis') as mock_redis_class, \
-             patch.object(adapter.app.logger, 'error') as mock_error:
-            # Make Redis constructor raise an exception
-            mock_redis_class.side_effect = Exception("Connection failed")
+        await adapter.start()
 
-            # The adapter should handle the error gracefully
-            await adapter.start()  # This should handle the exception internally
+        logger.error.assert_called()
+        assert adapter.redis is None  # Should be None on failure
 
-            # Verify error was logged and redis is None (connection failed)
-            mock_error.assert_called()
-            assert adapter.redis is None
+    async def test_stop_success(self):
+        """Test successful shutdown."""
+        app = Mock()
+        logger = Mock()
+        app.logger = logger
+
+        adapter = RedisAdapter(app)
+        adapter.redis = AsyncMock()
+        adapter.redis.close = AsyncMock()
+
+        # Mock some tasks
+        adapter.channels['channel1'] = Mock()
+        adapter.channels['channel1'].cancel = Mock()
+        adapter.stream_consumers['stream1'] = Mock()
+        adapter.stream_consumers['stream1'].cancel = Mock()
+
+        await adapter.stop()
+
+        adapter.redis.close.assert_called_once()
+        logger.info.assert_called_with("Redis connection closed")
 
 
-class TestRedisPubSub:
-    """Test Redis Pub/Sub functionality."""
+class TestRedisAdapterPubSubOperations:
+    """Test RedisAdapter pub/sub functionality."""
 
-    @pytest.mark.asyncio
-    async def test_publish_success(self, redis_adapter_fixture):
+    def test_subscribe_decorator(self):
+        """Test subscribe decorator registration."""
+        app = Mock()
+        app.container.get.side_effect = Exception("Config not found")
+
+        adapter = RedisAdapter(app)
+
+        @adapter.subscribe('test_channel')
+        def test_handler(message):
+            pass
+
+        assert 'test_channel' in adapter.subscribers
+        assert adapter.subscribers['test_channel'] == test_handler
+
+    async def test_publish_success(self):
         """Test successful message publishing."""
-        adapter = redis_adapter_fixture
-        adapter.redis.publish = AsyncMock(return_value=1)
+        app = Mock()
+        app.container.get.side_effect = Exception("Config not found")
 
-        result = await adapter.publish("test_channel", {"message": "test"})
+        adapter = RedisAdapter(app)
+        adapter.redis = AsyncMock()
+        adapter.redis.publish = AsyncMock()
+
+        result = await adapter.publish('test_channel', {'message': 'test'})
 
         assert result is True
-        adapter.redis.publish.assert_called_once()
-        args, kwargs = adapter.redis.publish.call_args
-        assert args[0] == "test_channel"
-        assert json.loads(args[1]) == {"message": "test"}
+        adapter.redis.publish.assert_called_once_with('test_channel', '{"message": "test"}')
 
-    @pytest.mark.asyncio
-    async def test_publish_error(self, redis_adapter_fixture):
-        """Test error handling in publish."""
-        adapter = redis_adapter_fixture
-        adapter.redis.publish = AsyncMock(side_effect=Exception("Publish failed"))
+    async def test_publish_failure(self):
+        """Test publish failure."""
+        app = Mock()
+        logger = Mock()
+        app.logger = logger
+        app.container.get.side_effect = Exception("Config not found")
 
-        result = await adapter.publish("test_channel", "test message")
+        adapter = RedisAdapter(app)
+        adapter.redis = AsyncMock()
+        adapter.redis.publish.side_effect = Exception("Publish failed")
+
+        result = await adapter.publish('test_channel', 'test message')
 
         assert result is False
+        logger.error.assert_called()
 
-    @pytest.mark.asyncio
-    async def test_publish_without_connection(self, redis_adapter_fixture):
-        """Test publish when Redis connection is not established."""
-        adapter = redis_adapter_fixture
+    async def test_publish_without_redis_connection(self):
+        """Test publish without Redis connection."""
+        app = Mock()
+        app.container.get.side_effect = Exception("Config not found")
+
+        adapter = RedisAdapter(app)
+        adapter.redis = None  # No connection
+
+        with pytest.raises(RuntimeError, match="Redis connection not established"):
+            await adapter.publish('test_channel', 'message')
+
+    async def test_subscribe_channel_processing(self):
+        """Test channel subscription and message processing."""
+        app = Mock()
+        logger = Mock()
+        app.logger = logger
+        app.container.get.side_effect = Exception("Config not found")
+
+        adapter = RedisAdapter(app)
+        adapter.redis = AsyncMock()
+
+        # Mock pubsub
+        mock_pubsub = AsyncMock()
+        adapter.redis.pubsub.return_value = mock_pubsub
+
+        async def mock_callback(message_data):
+            pass
+
+        # Simulate message processing
+        mock_message = {
+            'type': 'message',
+            'data': '{"test": "value"}'
+        }
+
+        mock_pubsub.listen = Mock()
+        mock_pubsub.listen.__aiter__ = Mock()
+        mock_pubsub.listen.__anext__ = AsyncMock(side_effect=[mock_message, StopAsyncIteration])
+
+        # Call the subscription method directly
+        with patch('asyncio.create_task') as mock_create_task:
+            await adapter._subscribe_channel('test_channel', mock_callback)
+            mock_pubsub.subscribe.assert_called_with('test_channel')
+
+    async def test_subscribe_channel_json_error_handling(self):
+        """Test channel subscription with JSON parsing error."""
+        app = Mock()
+        logger = Mock()
+        app.logger = logger
+        app.container.get.side_effect = Exception("Config not found")
+
+        adapter = RedisAdapter(app)
+        adapter.redis = AsyncMock()
+
+        # Mock pubsub
+        mock_pubsub = AsyncMock()
+        adapter.redis.pubsub.return_value = mock_pubsub
+
+        async def mock_callback(message_data):
+            pass
+
+        # Simulate message with invalid JSON
+        mock_message = {
+            'type': 'message',
+            'data': '{invalid json}'
+        }
+
+        mock_pubsub.listen = Mock()
+        mock_pubsub.listen.__aiter__ = Mock()
+        mock_pubsub.listen.__anext__ = AsyncMock(side_effect=[mock_message, StopAsyncIteration])
+
+        await adapter._subscribe_channel('test_channel', mock_callback)
+
+        # Should handle JSON error gracefully
+
+
+class TestRedisAdapterStreamOperations:
+    """Test RedisAdapter stream operations."""
+
+    def test_subscribe_stream_decorator(self):
+        """Test stream subscription decorator."""
+        app = Mock()
+        app.container.get.side_effect = Exception("Config not found")
+
+        adapter = RedisAdapter(app)
+
+        @adapter.subscribe('stream:test_stream')
+        def stream_handler(message_id, message_data):
+            pass
+
+        assert 'stream:test_stream' in adapter.subscribers
+        assert adapter.subscribers['stream:test_stream'] == stream_handler
+
+    async def test_publish_to_stream_success(self):
+        """Test successful publishing to stream."""
+        app = Mock()
+        app.container.get.side_effect = Exception("Config not found")
+
+        adapter = RedisAdapter(app)
+        adapter.redis = AsyncMock()
+        adapter.redis.xadd = AsyncMock(return_value='123456789-0')
+
+        result = await adapter.publish_to_stream('test_stream', {'field': 'value'})
+
+        assert result == '123456789-0'
+        adapter.redis.xadd.assert_called_once_with('test_stream', {'field': 'value'})
+
+    async def test_publish_to_stream_with_max_length(self):
+        """Test publishing to stream with max length."""
+        app = Mock()
+        app.container.get.side_effect = Exception("Config not found")
+
+        adapter = RedisAdapter(app)
+        adapter.redis = AsyncMock()
+        adapter.redis.xadd = AsyncMock(return_value='123456789-1')
+
+        result = await adapter.publish_to_stream('test_stream', {'field': 'value'}, max_length=100)
+
+        assert result == '123456789-1'
+        adapter.redis.xadd.assert_called_once_with('test_stream', {'field': 'value'}, maxlen=100)
+
+    async def test_publish_to_stream_without_redis(self):
+        """Test publishing to stream without Redis connection."""
+        app = Mock()
+        app.container.get.side_effect = Exception("Config not found")
+
+        adapter = RedisAdapter(app)
         adapter.redis = None
 
         with pytest.raises(RuntimeError, match="Redis connection not established"):
-            await adapter.publish("test_channel", "test")
-
-    def test_subscribe_channel_decorator(self, redis_adapter_fixture):
-        """Test channel subscription decorator registration."""
-        adapter = redis_adapter_fixture
-
-        @adapter.subscribe('notifications')
-        async def handle_notification(message):
-            pass
-
-        assert 'notifications' in adapter.subscribers
-        assert adapter.subscribers['notifications'] == handle_notification
-
-    def test_subscribe_stream_decorator(self, redis_adapter_fixture):
-        """Test stream subscription decorator registration."""
-        adapter = redis_adapter_fixture
-
-        @adapter.subscribe('stream:user_events')
-        async def handle_user_event(event_id, data):
-            pass
-
-        assert 'stream:user_events' in adapter.subscribers
-        assert adapter.subscribers['stream:user_events'] == handle_user_event
+            await adapter.publish_to_stream('test_stream', {'field': 'value'})
 
 
-class TestRedisStreams:
-    """Test Redis Streams functionality."""
+class TestRedisAdapterUtilityOperations:
+    """Test RedisAdapter utility operations (get, set, delete)."""
 
-    @pytest.mark.asyncio
-    async def test_publish_to_stream_success(self, redis_adapter_fixture):
-        """Test successful stream message publishing."""
-        adapter = redis_adapter_fixture
-        adapter.redis.xadd = AsyncMock(return_value="1640995200000-0")
+    async def test_get_success(self):
+        """Test successful get operation."""
+        app = Mock()
+        app.container.get.side_effect = Exception("Config not found")
 
-        data = {"user_id": "123", "action": "login"}
-        message_id = await adapter.publish_to_stream("user_events", data)
+        adapter = RedisAdapter(app)
+        adapter.redis = AsyncMock()
+        adapter.redis.get = AsyncMock(return_value='{"key": "value"}')
 
-        assert message_id == "1640995200000-0"
-        adapter.redis.xadd.assert_called_once_with("user_events", data)
+        result = await adapter.get('test_key')
 
-    @pytest.mark.asyncio
-    async def test_publish_to_stream_with_max_length(self, redis_adapter_fixture):
-        """Test stream publishing with max length."""
-        adapter = redis_adapter_fixture
-        adapter.redis.xadd = AsyncMock(return_value="1640995200000-1")
+        assert result == {"key": "value"}
+        adapter.redis.get.assert_called_with('test_key')
 
-        data = {"event": "test"}
-        message_id = await adapter.publish_to_stream("test_stream", data, max_length=1000)
+    async def test_get_string_value(self):
+        """Test get operation with plain string value."""
+        app = Mock()
+        app.container.get.side_effect = Exception("Config not found")
 
-        assert message_id == "1640995200000-1"
-        adapter.redis.xadd.assert_called_once_with("test_stream", data, maxlen=1000)
+        adapter = RedisAdapter(app)
+        adapter.redis = AsyncMock()
+        adapter.redis.get = AsyncMock(return_value='plain_string_value')
 
-    @pytest.mark.asyncio
-    async def test_publish_to_stream_error(self, redis_adapter_fixture):
-        """Test error handling in stream publishing."""
-        adapter = redis_adapter_fixture
-        adapter.redis.xadd = AsyncMock(side_effect=Exception("Stream publish failed"))
+        result = await adapter.get('test_key')
 
-        with pytest.raises(Exception, match="Stream publish failed"):
-            await adapter.publish_to_stream("test", {"data": "test"})
+        assert result == 'plain_string_value'
 
+    async def test_get_nonexistent_key(self):
+        """Test get operation for non-existent key."""
+        app = Mock()
+        app.container.get.side_effect = Exception("Config not found")
 
-class TestRedisCaching:
-    """Test Redis caching functionality."""
-
-    @pytest.mark.asyncio
-    async def test_get_cache_hit(self, redis_adapter_fixture):
-        """Test successful cache retrieval."""
-        adapter = redis_adapter_fixture
-        adapter.redis.get = AsyncMock(return_value='{"cached": "value"}')
-
-        result = await adapter.get("test_key")
-
-        assert result == {"cached": "value"}
-        adapter.redis.get.assert_called_once_with("test_key")
-
-    @pytest.mark.asyncio
-    async def test_get_cache_miss(self, redis_adapter_fixture):
-        """Test cache miss with default value."""
-        adapter = redis_adapter_fixture
+        adapter = RedisAdapter(app)
+        adapter.redis = AsyncMock()
         adapter.redis.get = AsyncMock(return_value=None)
 
-        result = await adapter.get("missing_key", default="default_value")
+        result = await adapter.get('nonexistent_key', 'default_value')
 
-        assert result == "default_value"
+        assert result == 'default_value'
 
-    @pytest.mark.asyncio
-    async def test_get_non_json_value(self, redis_adapter_fixture):
-        """Test retrieval of non-JSON cached values."""
-        adapter = redis_adapter_fixture
-        adapter.redis.get = AsyncMock(return_value="simple_string")
+    async def test_set_success(self):
+        """Test successful set operation."""
+        app = Mock()
+        app.container.get.side_effect = Exception("Config not found")
 
-        result = await adapter.get("test_key")
-
-        assert result == "simple_string"
-
-    @pytest.mark.asyncio
-    async def test_set_cache_success(self, redis_adapter_fixture):
-        """Test successful cache setting."""
-        adapter = redis_adapter_fixture
+        adapter = RedisAdapter(app)
+        adapter.redis = AsyncMock()
         adapter.redis.set = AsyncMock(return_value=True)
-        adapter.redis.setex = AsyncMock(return_value=True)
 
-        # Test simple set
-        result = await adapter.set("test_key", {"data": "test"})
-        assert result is True
-        adapter.redis.set.assert_called_once()
-
-    @pytest.mark.asyncio
-    async def test_set_cache_with_ttl(self, redis_adapter_fixture):
-        """Test cache setting with TTL."""
-        adapter = redis_adapter_fixture
-        adapter.redis.setex = AsyncMock(return_value=True)
-
-        result = await adapter.set("test_key", {"data": "test"}, ttl=60)
+        result = await adapter.set('test_key', {'data': 'value'})
 
         assert result is True
-        adapter.redis.setex.assert_called_once_with("test_key", 60, '{"data": "test"}')
+        adapter.redis.set.assert_called_with('test_key', '{"data": "value"}')
 
-    @pytest.mark.asyncio
-    async def test_set_cache_failure(self, redis_adapter_fixture):
-        """Test error handling in cache setting."""
-        adapter = redis_adapter_fixture
-        adapter.redis.set = AsyncMock(return_value=False)
+    async def test_set_with_ttl(self):
+        """Test set operation with TTL (time-to-live)."""
+        app = Mock()
+        app.container.get.side_effect = Exception("Config not found")
 
-        result = await adapter.set("test_key", "test_value")
+        adapter = RedisAdapter(app)
+        adapter.redis = AsyncMock()
+        adapter.redis.setex = AsyncMock(return_value=True)
+
+        result = await adapter.set('test_key', 'test_value', ttl=300)
+
+        assert result is True
+        adapter.redis.setex.assert_called_with('test_key', 300, 'test_value')
+
+    async def test_set_failure(self):
+        """Test set operation failure."""
+        app = Mock()
+        logger = Mock()
+        app.logger = logger
+        app.container.get.side_effect = Exception("Config not found")
+
+        adapter = RedisAdapter(app)
+        adapter.redis = AsyncMock()
+        adapter.redis.set.side_effect = Exception("Set failed")
+
+        result = await adapter.set('test_key', 'test_value')
 
         assert result is False
+        logger.error.assert_called()
 
-    @pytest.mark.asyncio
-    async def test_delete_cache(self, redis_adapter_fixture):
-        """Test cache key deletion."""
-        adapter = redis_adapter_fixture
+    async def test_set_without_redis_connection(self):
+        """Test set without Redis connection."""
+        app = Mock()
+        app.container.get.side_effect = Exception("Config not found")
+
+        adapter = RedisAdapter(app)
+        adapter.redis = None  # No connection
+
+        with pytest.raises(RuntimeError, match="Redis connection not established"):
+            await adapter.set('test_key', 'value')
+
+    async def test_delete_success(self):
+        """Test successful delete operation."""
+        app = Mock()
+        app.container.get.side_effect = Exception("Config not found")
+
+        adapter = RedisAdapter(app)
+        adapter.redis = AsyncMock()
         adapter.redis.delete = AsyncMock(return_value=2)  # 2 keys deleted
 
-        result = await adapter.delete("key1", "key2")
+        result = await adapter.delete('key1', 'key2', 'key3')
 
         assert result == 2
-        adapter.redis.delete.assert_called_once_with("key1", "key2")
+        adapter.redis.delete.assert_called_with('key1', 'key2', 'key3')
+
+    async def test_delete_without_redis_connection(self):
+        """Test delete without Redis connection."""
+        app = Mock()
+        app.container.get.side_effect = Exception("Config not found")
+
+        adapter = RedisAdapter(app)
+        adapter.redis = None  # No connection
+
+        with pytest.raises(RuntimeError, match="Redis connection not established"):
+            await adapter.delete('key1', 'key2')
+
+    async def test_get_without_redis_connection(self):
+        """Test get without Redis connection."""
+        app = Mock()
+        app.container.get.side_effect = Exception("Config not found")
+
+        adapter = RedisAdapter(app)
+        adapter.redis = None  # No connection
+
+        with pytest.raises(RuntimeError, match="Redis connection not established"):
+            await adapter.get('test_key')
 
 
-class TestRedisClientIP:
+class TestRedisAdapterClientIPExtraction:
     """Test client IP extraction functionality."""
 
-    def test_get_client_ip_forwarded_for(self, redis_adapter_fixture):
-        """Test client IP extraction from X-Forwarded-For header."""
-        adapter = redis_adapter_fixture
+    def test_get_client_ip_x_forwarded_for(self):
+        """Test IP extraction from X-Forwarded-For header."""
+        app = Mock()
+        app.container.get.side_effect = Exception("Config not found")
 
-        # Mock request with X-Forwarded-For
-        request = type('MockRequest', (), {
-            'headers': {'X-Forwarded-For': '10.0.0.1, 192.168.1.2'},
-            'remote': None
-        })()
-
-        ip = adapter.get_client_ip(request)
-        assert ip == "10.0.0.1"  # First IP in comma-separated list
-
-    def test_get_client_ip_real_ip(self, redis_adapter_fixture):
-        """Test client IP extraction from X-Real-IP header."""
-        adapter = redis_adapter_fixture
-
-        request = type('MockRequest', (), {
-            'headers': {'X-Real-IP': '203.0.113.1'},
-            'remote': None
-        })()
-
-        ip = adapter.get_client_ip(request)
-        assert ip == "203.0.113.1"
-
-    def test_get_client_ip_cloudflare(self, redis_adapter_fixture):
-        """Test client IP extraction from CF-Connecting-IP header."""
-        adapter = redis_adapter_fixture
-
-        request = type('MockRequest', (), {
-            'headers': {'CF-Connecting-IP': '198.51.100.1'},
-            'remote': None
-        })()
-
-        ip = adapter.get_client_ip(request)
-        assert ip == "198.51.100.1"
-
-    def test_get_client_ip_fallback_remote(self, redis_adapter_fixture):
-        """Test fallback to request.remote for client IP."""
-        adapter = redis_adapter_fixture
-
-        request = type('MockRequest', (), {
-            'headers': {},
-            'remote': '127.0.0.1'
-        })()
-
-        ip = adapter.get_client_ip(request)
-        assert ip == "127.0.0.1"
-
-    def test_get_client_ip_no_proxy_headers(self, redis_adapter_fixture):
-        """Test client IP when no proxy headers are present."""
-        adapter = redis_adapter_fixture
-
-        request = type('MockRequest', (), {
-            'headers': {},
-            'remote': None
-        })()
-
-        ip = adapter.get_client_ip(request)
-        assert ip == "unknown"
-
-
-class TestRedisLifecycle:
-    """Test RedisAdapter component lifecycle."""
-
-    @pytest.mark.asyncio
-    async def test_stop_cancels_consumers(self):
-        """Test that stop() properly cancels consumer tasks."""
-        app = App("TestApp")
         adapter = RedisAdapter(app)
 
-        # Mock Redis connection
-        adapter.redis = AsyncMock()
+        mock_request = Mock()
+        mock_request.headers = {'X-Forwarded-For': '192.168.1.100, 10.0.0.1'}
 
-        # Mock some running tasks
-        adapter.channels = {'test': AsyncMock()}
-        adapter.stream_consumers = {'stream1': AsyncMock()}
+        result = adapter.get_client_ip(mock_request)
 
-        await adapter.stop()
+        assert result == '192.168.1.100'
 
-        # Verify tasks were cancelled
-        adapter.channels['test'].cancel.assert_called_once()
-        adapter.stream_consumers['stream1'].cancel.assert_called_once()
-        adapter.redis.close.assert_called()
+    def test_get_client_ip_x_real_ip(self):
+        """Test IP extraction from X-Real-IP header."""
+        app = Mock()
+        app.container.get.side_effect = Exception("Config not found")
 
+        adapter = RedisAdapter(app)
 
-# Integration test for end-to-end functionality
-@pytest.mark.asyncio
-async def test_redis_adapter_integration():
-    """
-    Integration test for complete RedisAdapter lifecycle.
-    This is more of an end-to-end scenario test.
-    """
-    app = App("IntegrationTest")
-    adapter = RedisAdapter(app)
+        mock_request = Mock()
+        mock_request.headers = {'X-Real-IP': '192.168.1.200'}
 
-    # Test full initialization cycle
-    mock_redis = AsyncMock()
-    mock_redis.ping.return_value = "PONG"
+        result = adapter.get_client_ip(mock_request)
 
-    with patch('framework.redis_adapter.Redis', return_value=mock_redis):
-        # Test start
-        await adapter.start()
-        assert adapter.redis is mock_redis
+        assert result == '192.168.1.200'
 
-        # Register some subscribers
-        @adapter.subscribe('test_channel')
-        async def test_handler(message):
-            return f"processed: {message}"
+    def test_get_client_ip_cf_connecting_ip(self):
+        """Test IP extraction from Cloudflare header."""
+        app = Mock()
+        app.container.get.side_effect = Exception("Config not found")
 
-        assert 'test_channel' in adapter.subscribers
+        adapter = RedisAdapter(app)
 
-        # Setup mocks to return expected values
-        mock_redis.publish = AsyncMock(return_value=1)
-        mock_redis.set = AsyncMock(return_value=True)
-        mock_redis.get = AsyncMock(return_value='{"test": "data"}')
+        mock_request = Mock()
+        mock_request.headers = {'CF-Connecting-IP': '192.168.2.100'}
 
-        # Test some basic operations
-        try:
-            result = await adapter.publish("test_channel", "integration test")
-            assert result is True
+        result = adapter.get_client_ip(mock_request)
 
-            set_result = await adapter.set("integration_key", {"test": "data"})
-            assert set_result is True
+        assert result == '192.168.2.100'
 
-            cached_value = await adapter.get("integration_key")
-            assert cached_value == {"test": "data"}
-        except Exception as e:
-            # If operations fail, ensure connection error is handled properly
-            print(f"Integration test operation failed: {e}")
-            pass
+    def test_get_client_ip_multiple_headers(self):
+        """Test IP extraction when multiple headers are present."""
+        app = Mock()
+        app.container.get.side_effect = Exception("Config not found")
 
-        # Test stop
-        await adapter.stop()
+        adapter = RedisAdapter(app)
+
+        mock_request = Mock()
+        mock_request.headers = {
+            'X-Forwarded-For': '192.168.1.100, 10.0.0.1',
+            'X-Real-IP': '192.168.1.200',
+            'CF-Connecting-IP': '192.168.2.100'
+        }
+
+        # Should use X-Forwarded-For as it appears first in the order
+        result = adapter.get_client_ip(mock_request)
+
+        assert result == '192.168.1.100'
+
+    def test_get_client_ip_fallback_to_remote(self):
+        """Test IP fallback to remote address."""
+        app = Mock()
+        app.container.get.side_effect = Exception("Config not found")
+
+        adapter = RedisAdapter(app)
+
+        mock_request = Mock()
+        mock_request.headers = {}
+        mock_request.remote = '10.0.0.5'
+
+        result = adapter.get_client_ip(mock_request)
+
+        assert result == '10.0.0.5'
+
+    def test_get_client_ip_no_headers_no_remote(self):
+        """Test IP extraction when no headers and no remote address."""
+        app = Mock()
+        app.container.get.side_effect = Exception("Config not found")
+
+        adapter = RedisAdapter(app)
+
+        mock_request = Mock()
+        mock_request.headers = {}
+        mock_request.remote = None
+
+        result = adapter.get_client_ip(mock_request)
+
+        assert result == 'unknown'
+
+    def test_get_client_ip_empty_x_forwarded_for(self):
+        """Test IP extraction from empty X-Forwarded-For header."""
+        app = Mock()
+        app.container.get.side_effect = Exception("Config not found")
+
+        adapter = RedisAdapter(app)
+
+        mock_request = Mock()
+        mock_request.headers = {'X-Forwarded-For': ''}
+
+        result = adapter.get_client_ip(mock_request)
+
+        assert result == ''

@@ -3,7 +3,7 @@
 [![Python Version](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![Tests](https://img.shields.io/badge/tests-23_core_passed-success.svg)](https://github.com/ucore/framework)
-[![Domains](https://img.shields.io/badge/domains-9_architecture-brightgreen.svg)]()
+[![Domains](https://img.shields.io/badge/domains-9_architecture-💾_Resource_Provider-brightgreen.svg)]()
 [![Examples](https://img.shields.io/badge/examples-100%25_working-success.svg)]()
 
 **UCore** is a **domain-driven, production-ready enterprise framework** for building modern, observable, and scalable services. Features 9 specialized domains including web, data, desktop, messaging, monitoring, and more - all working seamlessly together.
@@ -31,6 +31,16 @@
 - **Configuration Integration** - Dynamic configuration updates
 - **Error Publication** - Structured error events with context tracking
 - **Resource Management** - Automatic cleanup and connection management
+- **Resource Provider System** - Enterprise-grade resource lifecycle management
+
+### 💾 **Resource Provider System**
+- **Unified Resource Orchestration** - Single manager for all external services
+- **4 Resource Types** - Resource, ManagedResource, PooledResource, ObservableResource
+- **9 Lifecycle States** - Complete state machine for resource management
+- **Connection Pooling** - Intelligent pool management with automatic cleanup
+- **Health Monitoring** - Continuous status tracking with automatic recovery
+- **Event-Driven Architecture** - Resource lifecycle events for monitoring
+- **Multiple Resource Types** - File, Database, API, Cache, Service resources
 
 ### 📊 **Enterprise Observability Stack**
 - **Prometheus Integration** - Complete metrics collection with custom business metrics
@@ -178,6 +188,148 @@ app.run()
 # ucore worker start
 ```
 
+### 💾 **Resource Provider System**
+
+**Enterprise-Grade Resource Management** ✅ 9 Lifecycle States, Connection Pooling, Health Monitoring
+
+```python
+from framework.app import App
+from framework.resource import ResourceManager
+from framework.resource.types import FileResource, MongoDBResource, APIResource
+
+# Create resource manager
+manager = ResourceManager()
+
+# Register multiple resource types with full lifecycle management
+file_resource = FileResource(
+    name="secure_files",
+    base_path="/app/data",
+    create_dirs=True,
+    ensure_permissions=True
+)
+
+mongo_resource = MongoDBResource(
+    name="main_db",
+    connection_string="mongodb://localhost:27017",
+    database_name="app_db",
+    max_pool_size=15,
+    min_pool_size=3
+)
+
+api_resource = APIResource(
+    name="github_api",
+    base_url="https://api.github.com",
+    auth={"bearer_token": "your-token"},
+    max_retries=3,
+    connection_pool_size=10
+)
+
+# Register all resources
+manager.register_resource(file_resource)
+manager.register_resource(mongo_resource)
+manager.register_resource(api_resource)
+
+# Unified lifecycle management
+await manager.start_all_resources()  # All resources start
+
+# File operations with security
+await file_resource.write_file("config/app.json", {"debug": True})
+data = await file_resource.read_file("config/app.json")
+
+# Database operations with monitoring
+collections = await mongo_resource.list_collections()
+health = await mongo_resource.health_check_detailed()
+
+# API operations with retry logic
+response = await api_resource.get("/repos/ucore/framework")
+users = await api_resource.post("/user/repos", {"name": "new-repo"})
+
+# Resource health monitoring
+health_summary = await manager.health_check_all()
+print(f"Total Resources: {health_summary['total_resources']}")
+print(f"Healthy: {health_summary['healthy_count']}")
+
+# Comprehensive statistics
+resource_stats = await manager.get_resource_stats()
+for name, stats in resource_stats.items():
+    print(f"{name}: Operations={stats['operation_count']}")
+
+# Graceful shutdown
+await manager.stop_all_resources()
+```
+
+**🚀 Key Features:**
+- **4 Resource Types** - Resource, ManagedResource, PooledResource, ObservableResource
+- **9 Lifecycle States** - Created → Ready → Connected → Disconnected → Destroyed
+- **Connection Pooling** - Intelligent pool management with automatic cleanup
+- **Health Monitoring** - Continuous status tracking with automatic recovery
+- **Event-Driven** - Resource lifecycle events for comprehensive monitoring
+- **Multi-Resource Support** - File, Database, API, Cache, Service resources
+- **Error Recovery** - Automatic reconnection and failure handling
+- **Security First** - Input validation, path protection, credential masking
+
+**📚 Full Documentation:** See [`docs/project-structure-guide.md`](docs/project-structure-guide.md) and [`docs/ucore-framework-guide.md`](docs/ucore-framework-guide.md)
+**🧪 Working Demo:** Run `python examples/complete_resource_example.py` for integrated showcase
+
+### 📊 **MongoDB Object-Document Mapper (ODM)**
+
+**Full Production Implementation** ✅ Async First, Identity Map Caching, Enterprise-Ready
+
+```python
+from framework.app import App
+from framework.data.mongo_adapter import MongoDBAdapter
+from framework.data.mongo_orm import BaseMongoRecord, Field, ReferenceField
+from pymongo import IndexModel, ASCENDING
+
+# Define your models
+class User(BaseMongoRecord):
+    collection_name = "users"
+    indexes = [
+        IndexModel([("email", ASCENDING)], unique=True),
+    ]
+
+    name: str = Field(default="Anonymous")
+    email: str = Field()
+    company = ReferenceField(Company)
+
+# App setup with MongoDB
+app = App("MongoDBApp")
+mongo_adapter = MongoDBAdapter(app)
+mongo_adapter.register_models([User])
+
+# Use it in your endpoints
+@http_server.route("/users/{user_id}", "GET")
+async def get_user(user_id: str):
+    user = await User.get_by_id(user_id)
+
+    # Identity Map ensures same object reuse!
+    user2 = await User.find_one({"_id": user_id})
+    assert user is user2  # ✅ True - Perfect caching!
+
+    # Automatic index creation & relationship loading
+    company = await user.company.fetch()
+
+    return {
+        "id": str(user.id),
+        "name": user.name,
+        "company": company.name if company else None
+    }
+
+# Start app - indexes created automatically
+await app.start()
+```
+
+**🚀 Key Features:**
+- **Async CRUD Operations** - Compatible with UCore's async architecture
+- **Identity Map Caching** - Prevents object duplication, enhances performance
+- **Declarative Indexes** - Automatic creation with compound, unique, and special index types
+- **Relationship Management** - Lazy loading for efficient data access patterns
+- **Component Integration** - Proper lifecycle management and dependency injection
+- **Enterprise Ready** - Production-tested with comprehensive error handling
+
+**📚 Full Documentation:** See [`docs/data/mongodb-odm-guide.md`](docs/data/mongodb-odm-guide.md)
+**🧪 Working Demo:** Run `python mongo_demo.py` for complete feature showcase
+
 ### 📊 Observability & Metrics
 
 ```python
@@ -246,13 +398,13 @@ UCore includes production-ready examples:
 |------------|-------------------|------------|------------------|
 | **Core** | `framework.core` | ✅ **23 Tests Passed** | App orchestrator, DI container, config management |
 | **Web** | `framework.web` | ✅ **4 Tests Passed** | HTTP server, routing, REST APIs, metrics |
-| **Data** | `framework.data` | ✅ **Working** | SQLAlchemy adapter, disk cache, persistence |
+| **Data** | `framework.data` | ✅ **MongoDB ODM Available** | MongoDB ODM, SQLAlchemy adapter, disk cache, persistence |
+| **Resource** | `framework.resource` | ✅ **Complete** | Resource manager, connection pooling, 4 resource types |
 | **Messaging** | `framework.messaging` | ✅ **8 Tests Passed** | EventBus, Redis pub/sub, event system |
 | **Monitoring** | `framework.monitoring` | ✅ **Working** | Prometheus metrics, logging, observability |
 | **Processing** | `framework.processing` | ✅ **Working** | Background tasks, CLI, async processing |
 | **Desktop** | `framework.desktop` | ✅ **Working** | PySide6/Qt integration, UI components |
 | **Simulation** | `framework.simulation` | ✅ **Working** | Entity simulation, testing framework |
-| **Comprehensive** | `framework.*` | ✅ **All Domains** | Cross-domain integration testing |
 
 ### **Key Architecture Components**
 
@@ -353,7 +505,13 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📖 **Documentation**
 
+- **[🏗️ Framework Structure & Roadmap](docs/ucore-framework-structure.md)** - Complete overview of all framework domains, current implementation status, and future development plan
+- **[🗂️ Project Structure Guide](docs/project-structure-guide.md)** - Complete developer reference for navigating the codebase structure
 - **[📋 Complete Framework Guide](docs/ucore-framework-guide.md)** - Comprehensive documentation for all 20+ components
+- **[📊 MongoDB ODM Guide](docs/data/mongodb-odm-guide.md)** - Complete MongoDB Object-Document Mapper documentation with examples
+- **[🎯 DDD Architecture Guide](docs/domain-driven-architecture.md)** - Domain-driven design principles and patterns
+- **[🔄 Event-Driven Applications](docs/event-driven-applications-guide.md)** - Event system guide and patterns
+- **[📈 Monitoring & Debugging](docs/monitoring-debugging-guide.md)** - Complete observability and debugging guide
 
 **Ready to build something amazing?** 🚀
 

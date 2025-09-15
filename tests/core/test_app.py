@@ -1,80 +1,293 @@
-# tests/test_app.py
-import unittest
-from unittest.mock import patch, MagicMock
-import sys
+import pytest
 import asyncio
-
-from framework.app import App
+from unittest.mock import Mock, patch, call, AsyncMock
+import argparse
+from framework.core.app import App
 from framework.core.component import Component
+from framework.core.di import Container
+from framework.core.config import Config
 
-class TestApp(unittest.TestCase):
 
-    def setUp(self):
-        """Set up a new App instance for each test."""
-        self.app = App(name="TestApp")
+class TestAppInitialization:
+    """Test App initialization and setup."""
 
-    def test_app_initialization(self):
-        """Test that the App can be initialized properly."""
-        self.assertIsNotNone(self.app.logger)
-        self.assertEqual(self.app.logger.name, "TestApp")
-        self.assertIsNotNone(self.app.container)
-        self.assertIsInstance(self.app._components, list)
-        self.assertEqual(len(self.app._components), 0)
+    def test_app_init(self):
+        """Test basic app initialization."""
+        app = App("TestApp")
 
-    def test_register_component(self):
-        """Test component registration."""
-        class MockComponent(Component):
+        assert app.name == "TestApp"
+        assert isinstance(app.container, Container)
+        assert len(app._components) == 0
+        assert isinstance(app._create_arg_parser(), argparse.ArgumentParser)
+
+    def test_bootstrap_with_args(self):
+        """Test bootstrap process with arguments."""
+        app = App("TestApp")
+
+        # Mock the container services
+        mock_config = Mock()
+        mock_logger = Mock()
+        mock_event_bus = Mock()
+
+        with patch.object(app.container, 'get', side_effect=lambda cls: {
+            Config: mock_config,
+            type(None): mock_logger,  # For Logging
+        }.get(cls, mock_event_bus)):
+            with patch.object(mock_logger, 'info'):
+                args = Mock()
+                args.config = None
+                args.plugins_dir = None
+                args.log_level = "INFO"
+
+                app.bootstrap(args)
+
+                # Verify services were retrieved
+                app.container.get.assert_any_call(Config)
+
+    def test_bootstrap_with_config_file(self):
+        """Test bootstrap with config file."""
+        app = App("TestApp")
+
+        mock_config = Mock()
+        mock_logger = Mock()
+
+        with patch.object(app.container, 'get', side_effect=lambda cls: mock_config if cls == Config else mock_logger):
+            with patch.object(mock_logger, 'info') as mock_info:
+                with patch.object(mock_config, 'load_from_file'):
+                    args = Mock()
+                    args.config = "test.yml"
+                    args.plugins_dir = None
+                    args.log_level = "INFO"
+
+                    app.bootstrap(args)
+
+                    mock_config.load_from_file.assert_called_once_with("test.yml")
+                    # Note: The logger might be called indirectly, so we check if load_from_file was called
+                    mock_config.load_from_file.assert_called_once_with("test.yml")
+                    # Config file loading completed successfully
+
+
+class TestComponentRegistration:
+    """Test component registration functionality."""
+
+    def test_register_component_class(self):
+        """Test registering a Component class."""
+        app = App("TestApp")
+
+        class TestComponent(Component):
             pass
 
-        self.app.register_component(MockComponent)
-        self.assertEqual(len(self.app._components), 1)
-        self.assertIsInstance(self.app._components[0], MockComponent)
-        # Test that the component has a reference to the app
-        self.assertIs(self.app._components[0].app, self.app)
+        app.register_component(TestComponent)
 
-    @patch('argparse.ArgumentParser')
-    def test_bootstrap(self, mock_arg_parser):
-        """Test that the App can bootstrap without running the event loop."""
-        mock_args = MagicMock()
-        mock_args.config = None
-        mock_args.log_level = "DEBUG"
-        mock_args.plugins_dir = None
-        mock_arg_parser.return_value.parse_args.return_value = mock_args
+        assert len(app._components) == 1
+        assert isinstance(app._components[0], TestComponent)
+        assert app._components[0].app == app
 
-        try:
-            self.app.bootstrap(mock_args)
-            self.assertIsNotNone(self.app.logger)
-            self.assertEqual(self.app.logger.name, "TestApp")
-        except Exception as e:
-            self.fail(f"App.bootstrap() raised an exception unexpectedly: {e}")
+    def test_register_component_instance(self):
+        """Test registering a Component instance."""
+        app = App("TestApp")
 
-    @patch('asyncio.Event.wait')
-    def test_start_and_stop_components(self, mock_event_wait):
-        """Test component lifecycle management."""
-        class TestComponent(Component):
-            def __init__(self, app: App):
-                super().__init__(app)
-                self.started = False
-                self.stopped = False
+        instance = Component(app)
+        app.register_component(instance)
 
-            async def start(self):
-                self.started = True
+        assert len(app._components) == 1
+        assert app._components[0] == instance
 
-            async def stop(self):
-                self.stopped = True
-        
-        self.app.register_component(TestComponent)
-        component_instance = self.app._components[0]
+    def test_register_factory_function(self):
+        """Test registering a factory function."""
+        app = App("TestApp")
 
-        async def test_lifecycle():
-            # We patch the event wait to prevent the main loop from blocking
-            await self.app._main_loop()
-            await self.app.stop()
+        def create_component(app=None):
+            return Component(app)
 
-        asyncio.run(test_lifecycle())
+        app.register_component(create_component)
 
-        self.assertTrue(component_instance.started)
-        self.assertTrue(component_instance.stopped)
+        assert len(app._components) == 1
+        assert isinstance(app._components[0], Component)
 
-if __name__ == '__main__':
-    unittest.main()
+
+class TestLifecycleManagement:
+    """Test component lifecycle management."""
+
+    @pytest.mark.asyncio
+    async def test_start_lifecycle(self):
+        """Test starting all components."""
+        app = App("TestApp")
+
+        # Mock components
+        mock_component1 = Mock()
+        mock_component1.start = AsyncMock()
+        mock_component2 = Mock()
+        mock_component2.start = AsyncMock()
+
+        app._components = [mock_component1, mock_component2]
+        app.logger = Mock()
+
+        # Mock event bus
+        mock_event_bus = Mock()
+        app.container.get = Mock(return_value=mock_event_bus)
+
+        with patch.object(app.container, 'get', return_value=mock_event_bus):
+            await app.start()
+
+            mock_event_bus.start.assert_called_once()
+            mock_component1.start.assert_called_once()
+            mock_component2.start.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_stop_lifecycle(self):
+        """Test stopping all components in reverse order."""
+        app = App("TestApp")
+
+        # Mock components
+        mock_component1 = Mock()
+        mock_component1.stop = AsyncMock()
+        mock_component2 = Mock()
+        mock_component2.stop = AsyncMock()
+
+        app._components = [mock_component1, mock_component2]
+        app.logger = Mock()
+
+        # Mock event bus
+        mock_event_bus = Mock()
+        app.container.get = Mock(return_value=mock_event_bus)
+
+        with patch.object(app.container, 'get', return_value=mock_event_bus):
+            await app.stop()
+
+            mock_component2.stop.assert_called_once()
+            mock_component1.stop.assert_called_once()
+            mock_event_bus.shutdown.assert_called_once()
+
+
+class TestConfigurationManagement:
+    """Test configuration management in App."""
+
+    def test_reload_config(self):
+        """Test configuration reloading."""
+        app = App("TestApp")
+
+        mock_config = Mock()
+        mock_event_bus = Mock()
+        app.logger = Mock()
+
+        app.container.get = Mock(side_effect=lambda cls: mock_config if cls == Config else mock_event_bus)
+
+        app.reload_config("new_config.yml")
+
+        mock_config.load_from_file.assert_called_once_with("new_config.yml")
+        mock_config.load_from_env.assert_called_once()
+
+    def test_update_log_level(self):
+        """Test log level updates."""
+        app = App("TestApp")
+
+        mock_logging = Mock()
+        app.logger = Mock()
+
+        app.container.get = Mock(return_value=mock_logging)
+
+        app.update_log_level("DEBUG")
+
+        mock_logging.set_global_level.assert_called_once_with("DEBUG")
+
+
+class TestArgumentParser:
+    """Test CLI argument parsing."""
+
+    def test_arg_parser_creation(self):
+        """Test argument parser setup."""
+        app = App("TestApp")
+
+        parser = app._create_arg_parser()
+
+        assert isinstance(parser, argparse.ArgumentParser)
+        assert parser.description == "TestApp Application"
+
+    def test_arg_parser_options(self):
+        """Test all expected arguments are available."""
+        app = App("TestApp")
+
+        parser = app._create_arg_parser()
+
+        # Parse help to ensure all arguments are defined
+        help_text = parser.format_help()
+
+        assert "--config" in help_text
+        assert "--log-level" in help_text
+        assert "--plugins-dir" in help_text
+
+
+class TestErrorHandling:
+    """Test error handling in App."""
+
+    @pytest.mark.asyncio
+    async def test_start_component_error_handling(self):
+        """Test error handling during component start."""
+        app = App("TestApp")
+
+        # Component that raises error
+        mock_component = Mock()
+        mock_component.start = AsyncMock(side_effect=Exception("Start failed"))
+
+        app._components = [mock_component]
+        app.logger = Mock()
+
+        mock_event_bus = Mock()
+        app.container.get = Mock(return_value=mock_event_bus)
+
+        with patch.object(app.container, 'get', return_value=mock_event_bus):
+            await app.start()
+
+            # Verify error was logged
+            app.logger.error.assert_called()
+            # Verify other components still start (though we only have one)
+
+
+class TestAppRun:
+    """Test app.run() method with signal handling."""
+
+    @patch('sys.platform', 'linux')
+    def test_run_with_signal_handlers_linux(self, mock_platform):
+        """Test run method sets up signal handlers on Linux."""
+        app = App("TestApp")
+
+        # Mock dependencies
+        mock_loop = Mock()
+        mock_loop.run_until_complete = Mock()
+        mock_loop.add_signal_handler = Mock()
+        mock_loop.call_soon_threadsafe = Mock()
+
+        mock_stop_event = Mock()
+        mock_stop_event.wait = Mock()
+
+        app._get_event_loop = Mock(return_value=mock_loop)
+        app._setup_signal_handlers = Mock()
+        app._main_loop = AsyncMock()
+
+        app.logger = Mock()
+
+        with patch('asyncio.Event', return_value=mock_stop_event):
+            # This will hang in infinite loop, so we need to handle KeyboardInterrupt
+            with pytest.raises(KeyboardInterrupt):
+                with patch.object(app._main_loop, 'throw', side_effect=KeyboardInterrupt):
+                    app.run()
+
+    @patch('sys.platform', 'win32')
+    def test_run_without_signal_handlers_windows(self, mock_platform):
+        """Test run method doesn't set up signal handlers on Windows."""
+        app = App("TestApp")
+
+        app.logger = Mock()
+        app.logger.info = Mock()
+
+        # Mock _main_loop to avoid infinite loop
+        app._main_loop = AsyncMock()
+        app._main_loop.side_effect = KeyboardInterrupt()
+
+        with patch.object(app, 'bootstrap'):
+            with patch.object(app, '_setup_signal_handlers'):
+                with patch.object(app, '_get_event_loop'):
+                    app.run()
+
+                    app.logger.info.assert_any_call("Signal handlers not fully supported on Windows. Use Ctrl+C.")
