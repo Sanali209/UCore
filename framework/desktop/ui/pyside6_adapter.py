@@ -5,6 +5,7 @@ import sys
 from PySide6.QtWidgets import QApplication
 import qasync
 from ...core.component import Component
+from loguru import logger
 
 class PySide6Adapter(Component):
     """
@@ -17,19 +18,25 @@ class PySide6Adapter(Component):
         self.event_loop = None
         self.windows = []
         self._shutdown_handler = None
+        logger.info("PySide6Adapter initialized")
 
     def set_shutdown_handler(self, handler):
         """
         Receives the application's shutdown handler.
         """
         self._shutdown_handler = handler
-        self.qt_app.aboutToQuit.connect(self._shutdown_handler)
+        if self.qt_app is not None and hasattr(self.qt_app, "aboutToQuit"):
+            self.qt_app.aboutToQuit.connect(self._shutdown_handler)
+            logger.info("Shutdown handler connected to aboutToQuit")
+        else:
+            logger.warning("qt_app is None or missing aboutToQuit; shutdown handler not connected")
 
     def add_window(self, window):
         """
         Keep a reference to the window to prevent it from being garbage collected.
         """
         self.windows.append(window)
+        logger.debug(f"Window added: {window}")
 
     def create_widget(self, widget_class, *args, **kwargs):
         """
@@ -56,14 +63,23 @@ class PySide6Adapter(Component):
                     pass
         
         # Create the widget instance with resolved dependencies
-        return widget_class(*args, **dependencies)
+        try:
+            return widget_class(*args, **dependencies)
+        except TypeError as e:
+            logger.error(f"Widget instantiation failed: {e}")
+            return None
+        except Exception as e:
+            logger.error(f"Widget instantiation failed: {e}")
+            raise
 
     def get_event_loop(self) -> asyncio.AbstractEventLoop:
         """
         Creates and returns a qasync event loop.
         This method is called by the main App class before the loop starts.
         """
-        self.app.logger.info("Initializing PySide6 event loop...")
+        logger.info("Initializing PySide6 event loop...")
+        if hasattr(self.app, "logger"):
+            self.app.logger.info("Initializing PySide6 event loop...")
 
         # Create QApplication if it doesn't exist (CRITICAL for Qt widget creation)
         if not self.qt_app:
@@ -72,18 +88,32 @@ class PySide6Adapter(Component):
                 if not hasattr(sys, 'argv') or len(sys.argv) == 0:
                     sys.argv = ['UCore']  # Set basic argv for Qt
 
-                self.qt_app = QApplication.instance() or QApplication(sys.argv)
-                self.app.logger.info("QApplication created and ready for Qt widgets")
+                existing_app = QApplication.instance()
+                if existing_app:
+                    self.qt_app = existing_app
+                else:
+                    self.qt_app = QApplication(sys.argv)
+                logger.info("QApplication created and ready for Qt widgets")
+                if hasattr(self.app, "logger"):
+                    self.app.logger.info("QApplication created and ready for Qt widgets")
             except Exception as e:
-                self.app.logger.error(f"Failed to create QApplication: {e}")
-                raise RuntimeError(f"Critical: Cannot create Qt application: {e}")
+                logger.error(f"Failed to create QApplication: {e}")
+                if hasattr(self.app, "logger"):
+                    self.app.logger.error(f"Failed to create QApplication: {e}")
+                raise SystemExit(f"Critical: Cannot create Qt application: {e}")
 
         # Create qasync event loop
+        if self.event_loop is not None:
+            return self.event_loop
         try:
             self.event_loop = qasync.QEventLoop(self.qt_app)
-            self.app.logger.info("PySide6 event loop created successfully - QApplication ready")
+            logger.info("PySide6 event loop created successfully - QApplication ready")
+            if hasattr(self.app, "logger"):
+                self.app.logger.info("PySide6 event loop created successfully - QApplication ready")
         except Exception as e:
-            self.app.logger.error(f"Failed to create PySide6 event loop: {e}")
+            logger.error(f"Failed to create PySide6 event loop: {e}")
+            if hasattr(self.app, "logger"):
+                self.app.logger.error(f"Failed to create PySide6 event loop: {e}")
             # Fallback to regular asyncio loop if qasync fails
             self.event_loop = asyncio.get_event_loop_policy().new_event_loop()
 
@@ -95,19 +125,25 @@ class PySide6Adapter(Component):
         This should be called before creating any Qt widgets.
         """
         if not self.qt_app:
-            self.get_event_loop()  # This will create QApplication if needed
+            return False
         return self.qt_app is not None
 
     def start(self):
         """
         The component start method. The Qt app is already running at this point.
         """
-        self.app.logger.info("PySide6Adapter started. Qt event loop is running.")
+        logger.info("PySide6Adapter started. Qt event loop is running.")
+        if hasattr(self.app, "logger"):
+            self.app.logger.info("PySide6Adapter started. Qt event loop is running.")
         # Verify Qt is properly set up
         if not self.qt_app:
-            self.app.logger.warning("QApplication not found in start() - critical Qt initialization issue")
+            logger.warning("QApplication not found in start() - critical Qt initialization issue")
+            if hasattr(self.app, "logger"):
+                self.app.logger.warning("QApplication not found in start() - critical Qt initialization issue")
         else:
-            self.app.logger.info("QApplication confirmed ready for Qt widget creation")
+            logger.info("QApplication confirmed ready for Qt widget creation")
+            if hasattr(self.app, "logger"):
+                self.app.logger.info("QApplication confirmed ready for Qt widget creation")
 
     def stop(self):
         """
@@ -122,4 +158,10 @@ class PySide6Adapter(Component):
         
         if self.qt_app:
             # This will be called as part of the graceful shutdown
-            self.app.logger.info("PySide6 adapter is stopping.")
+            logger.info("PySide6 adapter is stopping.")
+            if hasattr(self.app, "logger"):
+                self.app.logger.info("PySide6 adapter is stopping.")
+        else:
+            logger.info("PySide6 adapter stop called but qt_app is None.")
+            if hasattr(self.app, "logger"):
+                self.app.logger.info("PySide6 adapter stop called but qt_app is None.")

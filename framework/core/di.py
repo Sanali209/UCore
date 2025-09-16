@@ -80,56 +80,75 @@ class Container:
         dependencies = {}
         primitive_types = (str, int, float, bool, type(None))
         for name, param in params.items():
+            # Only resolve if annotation is present and not a primitive or generic type
             if param.annotation is not inspect.Parameter.empty:
                 resolved_type = None
                 if isinstance(param.annotation, str):
                     # Handle forward references
                     try:
-                        # Attempt to resolve the string annotation to a type
-                        # Look in the implementation class's module first, then test module, then globally
                         module = getattr(implementation, '__module__', '')
                         globals_dict = {}
-
-                        # Add commonly used framework classes to globals
                         import framework.app
-
-                        # Add framework modules' classes
                         for mod in [framework.app]:
                             globals_dict.update(mod.__dict__)
-
-                        # Try to resolve simple class names from module's globals
                         if module and module in sys.modules:
                             globals_dict.update(sys.modules[module].__dict__)
-
-                        # Fallback: try direct lookup if it's a simple class name
                         if param.annotation in globals_dict:
                             resolved_type = globals_dict[param.annotation]
                         else:
                             resolved_type = eval(param.annotation, globals_dict)
                     except (NameError, AttributeError):
                         try:
-                            # Try with builtins if local resolution fails
                             resolved_type = eval(param.annotation, __builtins__)
                         except:
                             resolved_type = None
                 else:
                     resolved_type = param.annotation
 
-                # Handle Union types (for Optional[T])
-                if get_origin(resolved_type) is Union:
-                    args = get_args(resolved_type)
-                    # Skip None and find the first registered type
-                    for arg in args:
-                        if arg is not type(None) and isinstance(arg, type) and arg not in primitive_types:
-                            try:
-                                dependencies[name] = self.get(arg, resolve_path[:])
-                                break
-                            except NoProviderError:
-                                continue  # Try next arg
-                    # If no provider found, skip the parameter
+                # Skip generic types (e.g., List, Dict, etc.)
+                origin = get_origin(resolved_type)
+                if origin is not None:
+                    # For Optional[T] (Union), try to resolve T, else use default/None
+                    if origin is Union:
+                        args = get_args(resolved_type)
+                        found = False
+                        for arg in args:
+                            if arg is not type(None) and isinstance(arg, type) and arg not in primitive_types:
+                                try:
+                                    dependencies[name] = self.get(arg, resolve_path[:])
+                                    found = True
+                                    break
+                                except NoProviderError:
+                                    continue
+                        if not found:
+                            # For Optionals, use default or None, never raise for required
+                            if param.default is not inspect.Parameter.empty:
+                                dependencies[name] = param.default
+                            else:
+                                dependencies[name] = None
+                    # For other generics (List, Dict, etc.), skip resolution (use default)
+                    continue
+
                 elif resolved_type is not None and resolved_type not in primitive_types:
-                    dependencies[name] = self.get(resolved_type, resolve_path[:])
+                    try:
+                        dependencies[name] = self.get(resolved_type, resolve_path[:])
+                    except NoProviderError:
+                        if param.default is not inspect.Parameter.empty:
+                            dependencies[name] = param.default
+                        elif param.default is inspect.Parameter.empty and param.kind not in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD):
+                            raise NoProviderError(f"No provider found for required argument '{name}' in {implementation.__name__}")
+                        else:
+                            dependencies[name] = None
                 # If unresolved or primitive, skip
+
+        # Fill in missing required arguments with None if not provided
+        for name, param in params.items():
+            if name not in dependencies:
+                if param.default is not inspect.Parameter.empty:
+                    dependencies[name] = param.default
+                else:
+                    # If we are missing a required dependency, raise NoProviderError
+                    raise NoProviderError(f"No provider found for required argument '{name}' in {implementation.__name__}")
 
         instance = implementation(**dependencies)
 

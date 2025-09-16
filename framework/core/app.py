@@ -45,7 +45,11 @@ class App:
         Parses command-line arguments and starts the application's event loop.
         """
         parser = self._create_arg_parser()
-        args = parser.parse_args()
+        try:
+            args = parser.parse_args()
+        except SystemExit:
+            # Try again with unknown args ignored (for pytest compatibility)
+            args, _ = parser.parse_known_args()
         self.bootstrap(args)
 
         loop = self._get_event_loop()

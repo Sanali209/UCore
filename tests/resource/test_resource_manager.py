@@ -20,38 +20,38 @@ class MockResource(Resource):
         self.connect_fail = False
         self.cleanup_fail = False
 
-    async def initialize(self):
+    async def _initialize(self):
         """Mock initialization."""
         self.initialize_count += 1
-        self.state = "created"
+        self._state = "created"
         self.is_connected = False
         await asyncio.sleep(0.01)  # Simulate async work
 
-    async def connect(self):
+    async def _connect(self):
         """Mock connection."""
         if self.connect_fail:
             raise Exception("Connection failed")
         self.is_connected = True
-        self.state = "connected"
+        self._state = "connected"
         await asyncio.sleep(0.01)
 
-    async def disconnect(self):
+    async def _disconnect(self):
         """Mock disconnection."""
         self.disconnect_count += 1
         self.is_connected = False
         await asyncio.sleep(0.01)
 
-    async def cleanup(self):
+    async def _cleanup(self):
         """Mock cleanup."""
         if self.cleanup_fail:
             raise Exception("Cleanup failed")
         self.cleanup_count += 1
         await asyncio.sleep(0.01)
 
-    async def health_check(self):
+    async def _health_check(self):
         """Mock health check."""
         await asyncio.sleep(0.01)
-        if self.state == "error":
+        if self._state == "error":
             return ResourceHealth.UNHEALTHY
         return ResourceHealth.HEALTHY
 

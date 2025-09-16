@@ -4,7 +4,7 @@ HTTP client resource with connection management, retry logic, and monitoring
 """
 
 import asyncio
-import logging
+from framework.monitoring.logging import Logging
 from typing import Any, Dict, Optional, Union, List
 import aiohttp
 import json
@@ -13,9 +13,7 @@ from urllib.parse import urljoin, urlparse
 from ..resource import Resource, ResourceHealth, ResourceState
 from ..exceptions import ResourceError, ResourceConnectionError, ResourceTimeoutError
 
-
-logger = logging.getLogger(__name__)
-
+logger = Logging().get_logger(__name__)
 
 class APIResource(Resource):
     """
@@ -357,3 +355,6 @@ class APIResource(Resource):
     def __str__(self) -> str:
         """String representation"""
         return f"APIResource(name='{self.name}', url='{self.base_url}', connected={self.is_connected})"
+
+# Alias for compatibility with tests
+ApiResource = APIResource

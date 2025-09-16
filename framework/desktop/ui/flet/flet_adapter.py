@@ -1,7 +1,7 @@
 # framework/ui/flet_adapter.py
 import flet as ft
 import asyncio
-from ...core.component import Component
+from framework.core.component import Component
 
 class FletAdapter(Component):
     """

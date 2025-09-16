@@ -4,6 +4,17 @@ Prometheus metrics middleware for HTTP request monitoring.
 Provides comprehensive observability for UCore applications.
 """
 
+import sys
+import types
+
+# Patch for resource.getpagesize on Windows before prometheus_client import
+try:
+    import resource
+except ImportError:
+    resource = types.SimpleNamespace()
+if not hasattr(resource, "getpagesize"):
+    resource.getpagesize = lambda: 4096
+
 import prometheus_client
 from prometheus_client import (
     Counter, Histogram, Gauge, Summary,
@@ -22,37 +33,43 @@ class HTTPMetricsAdapter(Component):
     Integrates Prometheus metrics with the existing HTTP server.
     """
 
-    def __init__(self, app):
+    def __init__(self, app, registry=None):
         self.app = app
         self.config = app.container.get(Config)
+        self.registry = registry or prometheus_client.REGISTRY
 
         # HTTP Request Metrics
         self.http_requests_total = Counter(
             'http_requests_total', 'Total number of HTTP requests',
-            ['method', 'endpoint', 'status_code', 'client_ip']
+            ['method', 'endpoint', 'status_code', 'client_ip'],
+            registry=self.registry
         )
 
         self.http_request_duration = Histogram(
             'http_request_duration_seconds', 'HTTP request duration in seconds',
             ['method', 'endpoint', 'status_code'],
-            buckets=[0.001, 0.005, 0.01, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0]
+            buckets=[0.001, 0.005, 0.01, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0],
+            registry=self.registry
         )
 
         self.http_requests_in_progress = Gauge(
             'http_requests_in_progress', 'Current number of HTTP requests in progress',
-            ['method', 'endpoint']
+            ['method', 'endpoint'],
+            registry=self.registry
         )
 
         # Response Size Metrics
         self.http_response_size = Summary(
             'http_response_size_bytes', 'HTTP response size in bytes',
-            ['method', 'endpoint']
+            ['method', 'endpoint'],
+            registry=self.registry
         )
 
         # Error Metrics
         self.http_errors_total = Counter(
             'http_errors_total', 'Total number of HTTP errors',
-            ['method', 'endpoint', 'error_type', 'status_code']
+            ['method', 'endpoint', 'error_type', 'status_code'],
+            registry=self.registry
         )
 
         # Dependency injection for services
@@ -71,8 +88,8 @@ class HTTPMetricsAdapter(Component):
         def metrics_handler(request):
             # Return Prometheus metrics
             return web.Response(
-                text=generate_latest(prometheus_client.REGISTRY).decode('utf-8'),
-                content_type=CONTENT_TYPE_LATEST,
+                text=generate_latest(self.registry).decode('utf-8'),
+                content_type="text/plain",
                 headers={'Cache-Control': 'no-cache, no-store, must-revalidate'}
             )
         return metrics_handler

@@ -4,7 +4,7 @@ Connection pooling for efficient resource management
 """
 
 import asyncio
-import logging
+from framework.monitoring.logging import Logging
 import time
 from typing import Any, Dict, List, Optional
 from abc import ABC, abstractmethod
@@ -13,7 +13,7 @@ from .exceptions import ResourcePoolExhaustedError, ResourceError
 from .events import ResourcePoolExhaustedEvent, ResourcePoolEvent
 
 
-logger = logging.getLogger(__name__)
+logger = Logging().get_logger(__name__)
 
 
 class PoolEntry:

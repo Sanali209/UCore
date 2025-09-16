@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Dict, Type
 import uuid
+import inspect  # Moved to module level for patching
 
 
 @dataclass
@@ -32,8 +33,6 @@ class Event(ABC):
     def _detect_source(self) -> str:
         """Detect source module from call stack"""
         try:
-            import inspect
-
             # Skip current frame and this method
             frame = inspect.currentframe()
             try:

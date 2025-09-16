@@ -4,7 +4,8 @@ Central component for managing all resources in the framework
 """
 
 import asyncio
-import logging
+from loguru import logger
+from framework.monitoring.progress import ProgressManager
 from typing import Any, Dict, List, Optional, Type
 from collections import defaultdict
 
@@ -13,7 +14,7 @@ from .exceptions import ResourceNotFoundError, ResourceError
 from .events import ResourceEvent
 
 
-logger = logging.getLogger(__name__)
+logger.add("resource_manager.log", rotation="1 MB")
 
 
 class ResourceManager:
@@ -35,6 +36,9 @@ class ResourceManager:
         # Resource registry
         self._resources: Dict[str, Resource] = {}
         self._resources_by_type: Dict[str, List[Resource]] = defaultdict(list)
+
+        # Progress manager for lifecycle operations
+        self.progress_manager = ProgressManager(event_bus=event_bus, description="ResourceManager Lifecycle")
 
         # Manager state
         self._is_started = False
@@ -163,6 +167,8 @@ class ResourceManager:
         started_resources = set()
         failed_resources = []
 
+        self.progress_manager.max_progress = len(self._resources)
+        self.progress_manager.reset()
         for resource in self._resources.values():
             try:
                 await resource.initialize()
@@ -170,9 +176,11 @@ class ResourceManager:
                     await resource.start_management()  # type: ignore
                 started_resources.add(resource.name)
                 logger.info(f"Started resource {resource.name}")
+                self.progress_manager.step(f"Started {resource.name}")
             except Exception as e:
                 logger.error(f"Failed to start resource {resource.name}: {e}")
                 failed_resources.append((resource.name, str(e)))
+                self.progress_manager.step(f"Failed {resource.name}")
 
         # Publish startup complete event
         await self._publish_event("resources_started", {
@@ -212,10 +220,13 @@ class ResourceManager:
 
         # Stop resources in reverse order
         shutdown_tasks = []
+        self.progress_manager.max_progress = len(self._resources)
+        self.progress_manager.reset()
         for resource in reversed(list(self._resources.values())):
             if resource.is_ready:
                 task = asyncio.create_task(self._shutdown_resource_safe(resource))
                 shutdown_tasks.append(task)
+                self.progress_manager.step(f"Stopping {resource.name}")
 
         # Wait for all shutdown tasks with timeout
         if shutdown_tasks:
@@ -324,7 +335,7 @@ class ResourceManager:
                 resource_name="resource_manager",
                 resource_type="manager",
                 timestamp=asyncio.get_event_loop().time(),
-                metadata=data
+                data=data
             )
             await self.event_bus.publish(f"resource.manager.{event_type}", event)
 
@@ -347,3 +358,33 @@ class ResourceManager:
     def __getitem__(self, name: str) -> Resource:
         """Get resource by name using dict-like syntax"""
         return self.get_resource(name)
+
+    def get_handler_count(self, resource_type: Optional[str] = None) -> int:
+        """
+        Return the number of registered resources, optionally filtered by type.
+        """
+        if resource_type is None:
+            return len(self._resources)
+        return len(self._resources_by_type.get(resource_type, []))
+
+    def get_event_types(self) -> set:
+        """
+        Return a set of all registered resource types.
+        """
+        return set(self._resources_by_type.keys())
+
+    def clear_handlers(self, resource_type: Optional[str] = None) -> int:
+        """
+        Remove resources by type or all resources if type is None.
+        Returns the number of resources removed.
+        """
+        if resource_type is None:
+            count = len(self._resources)
+            self._resources.clear()
+            self._resources_by_type.clear()
+            return count
+        removed = len(self._resources_by_type.get(resource_type, []))
+        for resource in self._resources_by_type.get(resource_type, []):
+            self._resources.pop(resource.name, None)
+        self._resources_by_type.pop(resource_type, None)
+        return removed

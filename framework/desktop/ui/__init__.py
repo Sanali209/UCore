@@ -16,7 +16,7 @@ Components:
 """
 
 from .pyside6_adapter import PySide6Adapter
-from .advanced_tree_list_view_model import HierarchicalDataViewModel
+# from .advanced_tree_list_view_model import HierarchicalDataViewModel
 
 # Try to import MongoDB-integrated version
 try:
@@ -28,7 +28,7 @@ except ImportError:
 
 __all__ = [
     "PySide6Adapter",
-    "HierarchicalDataViewModel",
+    # "HierarchicalDataViewModel",
 ]
 
 # Add MongoDB integration if available

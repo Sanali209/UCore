@@ -17,12 +17,20 @@ class Config:
     def load_from_file(self, filepath: str) -> None:
         """
         Loads configuration from a YAML file.
+        Merges dictionaries recursively instead of shallow update.
         """
+        def deep_update(d, u):
+            for k, v in u.items():
+                if isinstance(v, dict) and isinstance(d.get(k), dict):
+                    deep_update(d[k], v)
+                else:
+                    d[k] = v
+
         try:
             with open(filepath, 'r') as f:
                 file_config = yaml.safe_load(f)
                 if file_config:
-                    self.data.update(file_config)
+                    deep_update(self.data, file_config)
         except FileNotFoundError:
             # This is not an error, the file might be optional.
             pass
@@ -37,11 +45,18 @@ class Config:
         Nested keys can be specified using a separator (e.g., UCORE_DATABASE_HOST).
         """
         prefix = f"{self.env_prefix}{self.env_separator}"
+        from framework.resource.secrets import EnvVarSecretsManager
+        secrets_manager = EnvVarSecretsManager()
         for key, value in os.environ.items():
             if key.startswith(prefix):
                 # Remove prefix and split into nested keys
                 keys = key[len(prefix):].lower().split(self.env_separator)
-                self._set_nested(self.data, keys, self._cast_value(value))
+                # Use SecretsManager for secret-like keys
+                if any(s in key.lower() for s in ["secret", "password", "key"]):
+                    secret_value = secrets_manager.get_secret(key)
+                    self._set_nested(self.data, keys, self._cast_value(secret_value) if secret_value is not None else self._cast_value(value))
+                else:
+                    self._set_nested(self.data, keys, self._cast_value(value))
 
     def get(self, key: str, default: Optional[Any] = None) -> Any:
         """
@@ -59,9 +74,25 @@ class Config:
     def set(self, key: str, value: Any) -> None:
         """
         Sets a configuration value using dot notation for nested keys.
+        If key is empty, replaces the entire config data.
         """
-        keys = key.split('.')
-        self._set_nested(self.data, keys, value)
+        if not key:
+            self.data = value
+        else:
+            keys = key.split('.')
+            self._set_nested(self.data, keys, value)
+
+    def load_from_dict(self, config_dict: dict) -> None:
+        """
+        Loads configuration from a provided dictionary, merging recursively.
+        """
+        def deep_update(d, u):
+            for k, v in u.items():
+                if isinstance(v, dict) and isinstance(d.get(k), dict):
+                    deep_update(d[k], v)
+                else:
+                    d[k] = v
+        deep_update(self.data, config_dict)
 
     def save_to_file(self, filepath: str) -> None:
         """

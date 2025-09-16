@@ -6,23 +6,21 @@ Event definitions for resource lifecycle management
 from typing import Any, Dict, Optional
 from dataclasses import dataclass
 
-
 @dataclass
 class ResourceEvent:
     """Base event for all resource-related events"""
     resource_name: str
     resource_type: str
     timestamp: float
-    metadata: Optional[Dict[str, Any]] = None
-
 
 @dataclass
 class ResourceCreatedEvent(ResourceEvent):
     """Event fired when a resource is created"""
     resource_id: str
     config: Optional[Dict[str, Any]] = None
-    cleanup_duration: Optional[float] = None  # Added to make consistent with subclass
-
+    cleanup_duration: Optional[float] = None
+    metadata: Optional[Dict[str, Any]] = None
+    data: Optional[dict] = None
 
 @dataclass
 class ResourceDestroyedEvent(ResourceEvent):
@@ -30,7 +28,8 @@ class ResourceDestroyedEvent(ResourceEvent):
     resource_id: str
     config: Optional[Dict[str, Any]] = None
     cleanup_duration: Optional[float] = None
-
+    metadata: Optional[Dict[str, Any]] = None
+    data: Optional[dict] = None
 
 @dataclass
 class ResourceHealthChangedEvent(ResourceEvent):
@@ -38,7 +37,8 @@ class ResourceHealthChangedEvent(ResourceEvent):
     health_status: str  # "healthy", "unhealthy", "degraded"
     previous_status: Optional[str] = None
     reason: Optional[str] = None
-
+    metadata: Optional[Dict[str, Any]] = None
+    data: Optional[dict] = None
 
 @dataclass
 class ResourcePoolEvent(ResourceEvent):
@@ -47,12 +47,12 @@ class ResourcePoolEvent(ResourceEvent):
     pool_size: int
     available_count: int
 
-
 @dataclass
 class ResourcePoolExhaustedEvent(ResourcePoolEvent):
     """Event fired when pool is exhausted"""
     waiters_count: int
-
+    metadata: Optional[Dict[str, Any]] = None
+    data: Optional[dict] = None
 
 @dataclass
 class ResourceConnectionEvent(ResourceEvent):
@@ -60,19 +60,20 @@ class ResourceConnectionEvent(ResourceEvent):
     connection_id: str
     connection_url: Optional[str] = None
 
-
 @dataclass
 class ResourceConnectionEstablishedEvent(ResourceConnectionEvent):
     """Event fired when a connection is established"""
     retry_count: int = 0
-
+    metadata: Optional[Dict[str, Any]] = None
+    data: Optional[dict] = None
 
 @dataclass
 class ResourceConnectionLostEvent(ResourceConnectionEvent):
     """Event fired when a connection is lost"""
     disconnection_reason: Optional[str] = None
     reconnection_attempts: int = 0
-
+    metadata: Optional[Dict[str, Any]] = None
+    data: Optional[dict] = None
 
 @dataclass
 class ResourcePerformanceEvent(ResourceEvent):
@@ -81,7 +82,8 @@ class ResourcePerformanceEvent(ResourceEvent):
     duration_ms: float
     success: bool
     error_message: Optional[str] = None
-
+    metadata: Optional[Dict[str, Any]] = None
+    data: Optional[dict] = None
 
 @dataclass
 class ResourceErrorEvent(ResourceEvent):
@@ -90,7 +92,8 @@ class ResourceErrorEvent(ResourceEvent):
     error_type: str
     error_message: str
     stack_trace: Optional[str] = None
-
+    metadata: Optional[Dict[str, Any]] = None
+    data: Optional[dict] = None
 
 # Event types registry for easy reference
 EVENT_TYPES = {

@@ -1,84 +1,58 @@
-# framework/logging.py
-import logging
 import json
-import sys
+import logging
+from loguru import logger as loguru_logger
 
 class JsonFormatter(logging.Formatter):
+    """
+    Formatter for structured JSON logs.
+    """
     def format(self, record):
         log_record = {
-            "timestamp": self.formatTime(record, self.datefmt),
+            "timestamp": self.formatTime(record, self.datefmt) if hasattr(self, "datefmt") and self.datefmt else self.formatTime(record),
             "name": record.name,
             "level": record.levelname,
             "message": record.getMessage(),
         }
         if record.exc_info:
-            log_record['exc_info'] = self.formatException(record.exc_info)
+            log_record["exc_info"] = self.formatException(record.exc_info)
         return json.dumps(log_record)
+
+class LoggerWrapper:
+    def __init__(self, logger, name):
+        self._logger = logger
+        self._name = name
+
+    def getChild(self, suffix):
+        # Return a new LoggerWrapper with the child name
+        child_name = f"{self._name}.{suffix}" if self._name else suffix
+        return LoggerWrapper(self._logger, child_name)
+
+    def __getattr__(self, attr):
+        return getattr(self._logger, attr)
 
 class Logging:
     def __init__(self):
-        self._loggers = {}
         self._global_level = "INFO"
+        self._loggers = {}
 
-    def get_logger(self, name: str, level: str = None):
-        effective_level = level or self._global_level
-
-        # Convert level string to numeric value with fallback to INFO
-        try:
-            numeric_level = getattr(logging, effective_level.upper(), logging.INFO)
-            if not isinstance(numeric_level, int):
-                numeric_level = logging.INFO
-        except AttributeError:
-            numeric_level = logging.INFO
-
-        if name in self._loggers:
-            logger = self._loggers[name]
-            # Update level if it's cached and levels differ
-            if logger.level != numeric_level:
-                logger.setLevel(numeric_level)
-            return logger
-
-        logger = logging.getLogger(name)
-        logger.setLevel(numeric_level)
-        logger.propagate = False # Prevent duplicate logs in parent loggers
-
-        if not logger.handlers:
-            handler = logging.StreamHandler(sys.stdout)
-            formatter = JsonFormatter()
-            handler.setFormatter(formatter)
-            logger.addHandler(handler)
-
-        self._loggers[name] = logger
-        return logger
+    def get_logger(self, name: str = None, level: str = None):
+        """
+        Returns a loguru logger with the specified name and level.
+        """
+        # loguru does not use named loggers, but we can bind context
+        bound_logger = loguru_logger.bind(logger_name=name) if name else loguru_logger
+        effective_level = (level or self._global_level).upper()
+        loguru_logger.remove()
+        loguru_logger.add(lambda msg: print(msg, end=""), level=effective_level, serialize=True)
+        return LoggerWrapper(bound_logger, name)
 
     def set_global_level(self, level: str):
         """
-        Set the global logging level for all existing and future loggers.
-        Gracefully handles invalid level names.
+        Set the global logging level for all loggers.
         """
-        original_level = self._global_level
-
-        # Validate and set the global level with fallback
-        try:
-            test_numeric = getattr(logging, level.upper(), logging.INFO)
-            if isinstance(test_numeric, int):
-                self._global_level = level.upper()
-            else:
-                self._global_level = "INFO"
-        except AttributeError:
-            # Level not found, fallback to INFO and log warning
-            print(f"Warning: Invalid log level '{level}', falling back to INFO")
-            self._global_level = "INFO"
-
-        # Update all existing loggers
-        for logger in self._loggers.values():
-            try:
-                numeric_level = getattr(logging, self._global_level, logging.INFO)
-                logger.setLevel(numeric_level)
-                logger.info(f"Log level updated to {self._global_level}")
-            except Exception:
-                # If logging fails, set level silently
-                logger.setLevel(logging.INFO)
+        self._global_level = level.upper()
+        loguru_logger.remove()
+        loguru_logger.add(lambda msg: print(msg, end=""), level=self._global_level, serialize=True)
 
     def get_available_levels(self):
         """

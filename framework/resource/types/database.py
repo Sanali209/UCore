@@ -4,7 +4,7 @@ Provides database connection management with lifecycle management
 """
 
 import asyncio
-import logging
+from framework.monitoring.logging import Logging
 from typing import Any, Dict, Optional, Union
 from abc import ABC, abstractmethod
 
@@ -12,7 +12,7 @@ from ..resource import Resource, ResourceHealth, ResourceState
 from ..exceptions import ResourceError, ResourceConnectionError, ResourceStateError
 
 
-logger = logging.getLogger(__name__)
+logger = Logging().get_logger(__name__)
 
 
 class DatabaseResource(Resource, ABC):

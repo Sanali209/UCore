@@ -15,8 +15,9 @@ class Component:
     Base class for components that have a lifecycle managed by the App.
     Components can be initialized with a reference to the main App instance.
     """
-    def __init__(self, app: Optional["App"] = None):
+    def __init__(self, app: Optional["App"] = None, name: Optional[str] = None):
         self.app = app
+        self.name = name
 
     def start(self) -> None:
         """
@@ -50,11 +51,32 @@ class Component:
         Returns:
             EventBus: The shared event bus instance
         """
+        # Only cache a valid event bus, never cache None
+        if not hasattr(self, "_cached_event_bus"):
+            self._cached_event_bus = None
+
+        if self._cached_event_bus is not None:
+            return self._cached_event_bus
+
         if self.app:
-            # Import locally to avoid circular imports
-            from ..messaging.event_bus import EventBus
-            return self.app.container.get(EventBus)
+            try:
+                from ..messaging.event_bus import EventBus
+                event_bus = self.app.container.get(EventBus)
+                if event_bus is not None:
+                    self._cached_event_bus = event_bus
+                    return event_bus
+                else:
+                    return None
+            except Exception:
+                return None
         return None
+
+    def clear_event_bus_cache(self):
+        """
+        Clear the cached event bus instance (for testing or reinitialization).
+        """
+        if hasattr(self, "_cached_event_bus"):
+            del self._cached_event_bus
 
     def subscribe(self, event_type: Type["Event"], handler: Optional[Callable] = None, **kwargs) -> Any:
         """

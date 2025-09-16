@@ -5,7 +5,7 @@ Provides file system operations with lifecycle management
 
 import os
 import aiofiles
-import logging
+from framework.monitoring.logging import Logging
 from typing import Any, Dict, Optional
 from pathlib import Path
 
@@ -13,7 +13,7 @@ from ..resource import Resource, ResourceHealth, ResourceState
 from ..exceptions import ResourceError, ResourceStateError
 
 
-logger = logging.getLogger(__name__)
+logger = Logging().get_logger(__name__)
 
 
 class FileResource(Resource):

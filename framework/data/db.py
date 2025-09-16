@@ -170,7 +170,7 @@ class SQLAlchemyAdapter(Component):
                     error=e,
                     context={"operation": "stop"}
                 )
-
+            raise
     def on_config_update(self, config):
         """
         Handle dynamic configuration updates for database connection.

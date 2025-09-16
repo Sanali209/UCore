@@ -5,11 +5,10 @@ Core event publish/subscribe system for in-process component communication.
 
 import asyncio
 import inspect
-import logging
+from framework.monitoring.logging import Logging
 from collections import defaultdict
 from typing import Any, Callable, Dict, List, Type, Union, Tuple, Optional
 from .events import Event
-
 
 class EventHandlerInfo:
     """Internal class to track handler information"""
@@ -44,7 +43,6 @@ class EventHandlerInfo:
 
         return True
 
-
 class EventBus:
     """
     Central event bus for publish/subscribe pattern.
@@ -70,10 +68,10 @@ class EventBus:
         bus.publish(event)
     """
 
-    def __init__(self, logger: Optional[logging.Logger] = None):
+    def __init__(self, logger=None):
         self._handlers: Dict[Type[Event], List[EventHandlerInfo]] = defaultdict(list)
         self._middlewares: List[Callable[[Event, Callable], Any]] = []
-        self._logger = logger or logging.getLogger(__name__)
+        self._logger = logger or Logging().get_logger(__name__)
         self._next_handler_id = 0
         self._running = False
 
@@ -262,7 +260,7 @@ class EventBus:
             return total
         else:
             count = len(self._handlers[event_type])
-            self._handlers[event_type].clear()
+            del self._handlers[event_type]
             self._logger.info(f"Cleared {count} handlers for {event_type.__name__}")
             return count
 
@@ -510,6 +508,6 @@ class EventBus:
             else:
                 # Run sync handler in thread pool
                 loop = asyncio.get_event_loop()
-                await loop.run_in_executor(None, handler_info.handler, event)
+                await loop.run_in_executor(None, lambda: handler_info.handler(event))
         except Exception as e:
             self._logger.error(f"Handler {handler_info.handler_id} failed: {e}", exc_info=True)

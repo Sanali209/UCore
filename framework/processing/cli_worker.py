@@ -9,7 +9,7 @@ import asyncio
 import signal
 import inspect
 from typing import Optional, List
-from .logging import Logging
+from framework.monitoring.logging import Logging
 
 
 class WorkerManager:

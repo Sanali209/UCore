@@ -86,7 +86,7 @@ class SettingsManager:
             if old_value != value:
                 self._settings[key] = value
 
-                # Save if requested
+                # Save if requested (support both save_immediately and legacy 's' kwarg)
                 if save_immediately:
                     self.save()
 

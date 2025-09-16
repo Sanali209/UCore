@@ -66,8 +66,25 @@ class TestSettingsManagerInitialization:
             with patch('builtins.print') as mock_print:
                 settings = SettingsManager(config_file=temp_config)
                 # Invalid YAML should be handled gracefully
-                assert len(settings._settings) == 4  # Only defaults should be present
-
+                # Should load all defaults (9 keys), not just 4
+                expected_defaults = [
+                    "app_name", "version", "download_directory",
+                    "recent_directories", "max_results", "workers",
+                    "timeout", "log_level", "window_geometry"
+                ]
+                for key in expected_defaults:
+                    assert key in settings._settings
+                # Accept either error message variant for invalid YAML
+                found_expected = False
+                for call_args in mock_print.call_args_list:
+                    msg = call_args[0][0]
+                    if (
+                        msg.startswith("⚠️ Empty or invalid YAML in")
+                        or msg.startswith("⚠️ Failed to load YAML config from")
+                    ):
+                        found_expected = True
+                        break
+                assert found_expected, "Expected error message for invalid YAML not found"
         finally:
             os.unlink(temp_config)
 
@@ -137,23 +154,19 @@ class TestSettingsOperations:
 
     def test_set_setting_without_save(self):
         """Test setting a setting without immediate save."""
-        settings = Mock()
+        settings = SettingsManager()
         settings._settings = {}
-        settings.set = lambda k, v, s=True: None
-        settings.save = Mock()
-
-        settings.set("test_key", "test_value", save_immediately=False)
-        settings.save.assert_not_called()
+        with patch.object(settings, "save") as mock_save:
+            settings.set("test_key", "test_value", save_immediately=False)
+            mock_save.assert_not_called()
 
     def test_set_setting_with_save(self):
         """Test setting a setting with immediate save."""
-        settings = Mock()
+        settings = SettingsManager()
         settings._settings = {}
-        settings.save = Mock()
-        settings.set = lambda k, v, s=True: settings.save() or None
-
-        settings.set("test_key", "test_value", save_immediately=True)
-        settings.save.assert_called_once()
+        with patch.object(settings, "save") as mock_save:
+            settings.set("test_key", "test_value", save_immediately=True)
+            mock_save.assert_called_once()
 
 
 class TestSettingsPersistence:
@@ -170,11 +183,12 @@ class TestSettingsPersistence:
 
             settings = SettingsManager()
             settings._settings = {"test_key": "test_value"}
+            settings.config_file = "result.yml"
 
             result = settings.save()
 
             # Should have opened the file for writing
-            mock_open.assert_called_once_with("result.yml", 'w', encoding='utf-8')
+            mock_open.assert_any_call("result.yml", 'w', encoding='utf-8')
             assert result is True  # Should return True on success
 
     def test_save_yaml_error_handling(self):
@@ -273,69 +287,58 @@ class TestSettingsSpecializedMethods:
 
     def test_get_download_directory(self):
         """Test getting download directory setting."""
-        settings = Mock()
-        settings.get = Mock(return_value="/test/download/path")
-
+        settings = SettingsManager()
+        test_path = "/test/download/path"
+        settings.set("download_directory", test_path, save_immediately=False)
         result = settings.get_download_directory()
-        assert result == "/test/download/path"
+        assert result == test_path
 
     def test_set_download_directory_valid(self):
         """Test setting download directory with valid path."""
         with patch('os.path.isdir', return_value=True):
-            settings = Mock()
-            settings.set = Mock()
-            settings.get = Mock(return_value=[])
-            settings.set("recent_directories", None)
-
+            settings = SettingsManager()
+            settings.set("recent_directories", [], save_immediately=False)
             result = settings.set_download_directory("/valid/path")
             assert result is True
 
     def test_set_download_directory_invalid(self):
         """Test setting download directory with invalid path."""
         with patch('os.path.isdir', return_value=False):
-            settings = Mock()
-
+            settings = SettingsManager()
             result = settings.set_download_directory("/invalid/path")
             assert result is False
 
     def test_set_download_directory_with_recent_list(self):
         """Test that setting download directory updates recent list."""
         with patch('os.path.isdir', return_value=True):
-            settings = Mock()
-            settings.get = Mock(return_value=["/old/path"])
-            settings.set = Mock()
-
+            settings = SettingsManager()
+            settings.set("recent_directories", ["/old/path"], save_immediately=False)
             settings.set_download_directory("/new/path")
-
-            # Should have done multiple set calls
-            assert settings.set.call_count >= 1
+            recent = settings.get("recent_directories")
+            assert "/new/path" in recent
 
     def test_get_recent_directories(self):
         """Test getting recent directories list."""
         recent_dirs = ["/path1", "/path2", "/path3"]
-        settings = Mock()
-        settings.get = Mock(return_value=recent_dirs)
-
+        settings = SettingsManager()
+        settings.set("recent_directories", recent_dirs, save_immediately=False)
         result = settings.get_recent_directories()
         assert result == recent_dirs
 
     def test_get_window_geometry(self):
         """Test getting window geometry settings."""
         geometry = {"width": 1200, "height": 800, "x": 100, "y": 100}
-        settings = Mock()
-        settings.get = Mock(return_value=geometry)
-
+        settings = SettingsManager()
+        settings.set("window_geometry", geometry, save_immediately=False)
         result = settings.get_window_geometry()
         assert result == geometry
 
     def test_set_window_geometry(self):
         """Test setting window geometry."""
         geometry = {"width": 800, "height": 600, "x": 50, "y": 50}
-        settings = Mock()
-        settings.set = Mock()
-
+        settings = SettingsManager()
         settings.set_window_geometry(geometry)
-        settings.set.assert_called_once_with("window_geometry", geometry)
+        assert settings.get("window_geometry") == geometry
 
 
 class TestThreadSafety:
@@ -343,11 +346,13 @@ class TestThreadSafety:
 
     def test_threading_lock_initialization(self):
         """Test that threading lock is properly initialized."""
+        import threading as th
         with patch('os.path.exists', return_value=False):
             settings = SettingsManager()
 
             assert hasattr(settings, '_lock')
-            assert isinstance(settings._lock, threading.RLock)
+            # isinstance cannot be used directly with _thread.RLock, so check class name
+            assert settings._lock.__class__.__name__ == "RLock"
 
     def test_concurrently_safe_operations(self):
         """Test that operations are thread-safe."""

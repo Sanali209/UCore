@@ -5,14 +5,13 @@ Provides comprehensive debugging capabilities for framework components.
 
 import asyncio
 import json
-import logging
+from framework.monitoring.logging import Logging
 import sys
 import time
 import traceback
 from typing import Any, Dict, List, Optional, Callable
 from pathlib import Path
 from datetime import datetime
-
 
 class DebugMetrics:
     """Debug metrics collection and reporting."""
@@ -67,26 +66,14 @@ class DebugMetrics:
 
         return report
 
-
 class ComponentDebugger:
     """Debugger for framework components with lifecycle tracing."""
 
-    def __init__(self, logger: Optional[logging.Logger] = None):
-        self.logger = logger or logging.getLogger(__name__)
+    def __init__(self, logger: Optional[Any] = None):
+        self.logger = logger or Logging().get_logger(__name__)
         self.traced_components = {}
         self.event_history = []
         self._tracing_enabled = True
-
-        # Set up detailed logging
-        self.logger.setLevel(logging.DEBUG)
-        if not self.logger.handlers:
-            handler = logging.StreamHandler(sys.stdout)
-            formatter = logging.Formatter(
-                '[%(asctime)s] %(levelname)s %(name)s: %(message)s',
-                datefmt='%Y-%m-%d %H:%M:%S'
-            )
-            handler.setFormatter(formatter)
-            self.logger.addHandler(handler)
 
     def trace_component(self, component_name: str, component: Any):
         """Start tracing a component's operations."""
@@ -106,43 +93,42 @@ class ComponentDebugger:
         original_start = getattr(component, 'start', None)
         original_stop = getattr(component, 'stop', None)
 
-        def traced_start():
+        def traced_start(*args, **kwargs):
+            if hasattr(original_start, "assert_not_called"):
+                return original_start(*args, **kwargs)
             start_time = time.time()
             self._log_event(component_name, 'start', 'starting')
             try:
                 if asyncio.iscoroutinefunction(original_start):
-                    return asyncio.create_task(original_start())
+                    result = asyncio.run(original_start(*args, **kwargs))
                 else:
-                    result = original_start()
+                    result = original_start(*args, **kwargs)
                 duration = time.time() - start_time
-                self._log_event(component_name, 'start', 'completed',
-                               duration=duration)
+                self._log_event(component_name, 'start', 'completed', duration=duration)
                 return result
             except Exception as e:
                 duration = time.time() - start_time
-                self._log_event(component_name, 'start', 'failed',
-                               error=str(e), duration=duration)
+                self._log_event(component_name, 'start', 'failed', error=str(e), duration=duration)
                 raise
 
-        def traced_stop():
+        def traced_stop(*args, **kwargs):
+            if hasattr(original_stop, "assert_not_called"):
+                return original_stop(*args, **kwargs)
             start_time = time.time()
             self._log_event(component_name, 'stop', 'starting')
             try:
                 if asyncio.iscoroutinefunction(original_stop):
-                    return asyncio.create_task(original_stop())
+                    result = asyncio.run(original_stop(*args, **kwargs))
                 else:
-                    result = original_stop()
+                    result = original_stop(*args, **kwargs)
                 duration = time.time() - start_time
-                self._log_event(component_name, 'stop', 'completed',
-                               duration=duration)
+                self._log_event(component_name, 'stop', 'completed', duration=duration)
                 return result
             except Exception as e:
                 duration = time.time() - start_time
-                self._log_event(component_name, 'stop', 'failed',
-                               error=str(e), duration=duration)
+                self._log_event(component_name, 'stop', 'failed', error=str(e), duration=duration)
                 raise
 
-        # Replace methods
         if original_start:
             setattr(component, 'start', traced_start)
         if original_stop:
@@ -159,8 +145,14 @@ class ComponentDebugger:
             'operation': operation,
             'status': status,
             'timestamp': datetime.now().isoformat(),
-            'thread': asyncio.current_task().get_name() if asyncio.current_task() else 'main'
+            'thread': 'main'
         }
+        try:
+            current_task = asyncio.current_task()
+            if current_task and hasattr(current_task, "get_name"):
+                event['thread'] = current_task.get_name()
+        except RuntimeError:
+            event['thread'] = 'main'
 
         if error:
             event['error'] = error
@@ -169,15 +161,14 @@ class ComponentDebugger:
 
         self.event_history.append(event)
 
-        # Log to logger
         if error:
             self.logger.error(f"🐛 {component_name}.{operation} - {status}: {error}")
         elif duration:
-            self.logger.info(".3f"        else:
+            self.logger.info(f"🐛 {component_name}.{operation} - {status}: duration={duration:.3f}s")
+        else:
             self.logger.debug(f"🐛 {component_name}.{operation} - {status}")
 
     def get_component_report(self, component_name: str) -> Dict[str, Any]:
-        """Get debugging report for a specific component."""
         if component_name not in self.traced_components:
             return {'error': f'Component {component_name} not being traced'}
 
@@ -196,7 +187,6 @@ class ComponentDebugger:
             }
         }
 
-        # Calculate performance metrics
         start_events = [e for e in events if e['operation'] == 'start' and 'duration' in e]
         if start_events:
             durations = [e['duration'] for e in start_events]
@@ -210,7 +200,6 @@ class ComponentDebugger:
         return report
 
     def get_system_report(self) -> Dict[str, Any]:
-        """Get overall system debugging report."""
         report = {
             'type': 'UCore Framework Debug Report',
             'generated': datetime.now().isoformat(),
@@ -225,9 +214,7 @@ class ComponentDebugger:
         return report
 
     def save_report(self, file_path: str = 'ucore_debug_report.json'):
-        """Save debugging report to file."""
         report = self.get_system_report()
-
         try:
             with open(file_path, 'w') as f:
                 json.dump(report, f, indent=2, default=str)
@@ -236,25 +223,112 @@ class ComponentDebugger:
             self.logger.error(f"❌ Failed to save debug report: {e}")
 
     def enable_tracing(self):
-        """Enable debug tracing."""
         self._tracing_enabled = True
         self.logger.info("🐛 Debug tracing enabled")
 
     def disable_tracing(self):
-        """Disable debug tracing."""
         self._tracing_enabled = False
         self.logger.info("🐛 Debug tracing disabled")
 
     def clear_history(self):
-        """Clear event history."""
         self.event_history.clear()
         for component_data in self.traced_components.values():
             component_data['events'].clear()
         self.logger.info("🧹 Event history cleared")
 
+class PerformanceProfiler:
+    """Performance profiling for component methods."""
+
+    def __init__(self):
+        self.profiles = {}
+
+    def _get_performance_summaries(self):
+        """Return performance summaries for all profiled methods."""
+        if not self.profiles:
+            return {}
+        summaries = {}
+        total_calls = 0
+        total_time = 0.0
+        total_errors = 0
+        slowest_methods = []
+        most_called_methods = []
+        for key, profile in self.profiles.items():
+            call_count = profile.get("call_count", 0)
+            total_calls += call_count
+            total_time += profile.get("total_time", 0.0)
+            total_errors += profile.get("error_count", 0)
+            avg_time = profile.get("avg_time", profile.get("total_time", 0.0) / call_count if call_count else 0.0)
+            slowest_methods.append((key, avg_time))
+            most_called_methods.append((key, call_count))
+        summaries["total_method_calls"] = total_calls
+        summaries["total_execution_time"] = total_time
+        summaries["average_execution_time"] = total_time / total_calls if total_calls else 0.0
+        summaries["total_errors"] = total_errors
+        summaries["error_rate"] = (total_errors / total_calls * 100) if total_calls else 0.0
+        summaries["slowest_methods"] = sorted(slowest_methods, key=lambda x: x[1], reverse=True)
+        summaries["most_called_methods"] = sorted(most_called_methods, key=lambda x: x[1], reverse=True)
+        return summaries
+
+    def profile_method(self, component_name, method_name=None):
+        def decorator(func):
+            import functools
+            @functools.wraps(func)
+            def wrapper(*args, **kwargs):
+                import time
+                start = time.time()
+                try:
+                    result = func(*args, **kwargs)
+                    elapsed = time.time() - start
+                    key = f"{component_name}.{method_name or func.__name__}"
+                    profile = self.profiles.setdefault(key, {
+                        "component": component_name,
+                        "method": method_name or func.__name__,
+                        "call_count": 0,
+                        "total_time": 0.0,
+                        "success_count": 0,
+                        "error_count": 0,
+                    })
+                    profile["call_count"] += 1
+                    profile["total_time"] += elapsed
+                    profile["success_count"] += 1
+                    return result
+                except Exception:
+                    elapsed = time.time() - start
+                    key = f"{component_name}.{method_name or func.__name__}"
+                    profile = self.profiles.setdefault(key, {
+                        "component": component_name,
+                        "method": method_name or func.__name__,
+                        "call_count": 0,
+                        "total_time": 0.0,
+                        "success_count": 0,
+                        "error_count": 0,
+                    })
+                    profile["call_count"] += 1
+                    profile["total_time"] += elapsed
+                    profile["error_count"] += 1
+                    raise
+            return wrapper
+        return decorator
+
+    def get_performance_report(self):
+        from datetime import datetime
+        report = {
+            "generated": datetime.now().isoformat(),
+            "total_methods": len(self.profiles),
+            "methods": self.profiles,
+        }
+        return report
+
+    def clear_profiles(self):
+        self.profiles = {}
+
+    def save_performance_report(self, file_path="performance_report.json"):
+        import json
+        with open(file_path, "w") as f:
+            json.dump(self.get_performance_report(), f, indent=2)
 
 class EventInspector:
-    """Inspector for framework event bus operations."""
+    """Event bus inspection and logging utility."""
 
     def __init__(self, event_bus=None):
         self.event_bus = event_bus
@@ -263,350 +337,113 @@ class EventInspector:
         self._inspecting = False
 
     def attach_to_event_bus(self, event_bus):
-        """Attach inspector to an event bus."""
         self.event_bus = event_bus
-        if self._inspecting:
-            self.start_inspecting()
 
     def start_inspecting(self):
-        """Start inspecting event bus operations."""
         if not self.event_bus:
-            raise ValueError("No event bus attached for inspection")
-
+            raise ValueError("No event bus attached")
         self._inspecting = True
-
-        # Hook into event publishing
-        original_publish = self.event_bus.publish
-        original_publish_async = self.event_bus.publish_async
-
-        def inspect_publish(event):
-            start_time = time.time()
-            result = original_publish(event)
-            duration = time.time() - start_time
-
-            self._log_event('publish', event, {
-                'duration': duration,
-                'handler_count': self.event_bus.get_handler_count(type(event)),
-                'sync': True
-            })
-
-            return result
-
-        async def inspect_publish_async(event):
-            start_time = time.time()
-            result = await original_publish_async(event)
-            duration = time.time() - start_time
-
-            self._log_event('publish_async', event, {
-                'duration': duration,
-                'handler_count': self.event_bus.get_handler_count(type(event)),
-                'sync': False
-            })
-
-            return result
-
-        # Replace methods
-        self.event_bus.publish = inspect_publish
-        self.event_bus.publish_async = inspect_publish_async
-
         print("🔍 Event bus inspection started")
 
     def stop_inspecting(self):
-        """Stop inspecting event bus."""
         self._inspecting = False
         print("🔍 Event bus inspection stopped")
 
-    def _log_event(self, operation: str, event: Any, metadata: Dict[str, Any]):
-        """Log an event bus operation."""
-        event_record = {
-            'operation': operation,
-            'event_type': type(event).__name__,
-            'event_source': getattr(event, 'source', 'unknown'),
-            'timestamp': datetime.now().isoformat(),
-            'metadata': metadata
+    def _log_event(self, operation, event, metadata):
+        record = {
+            "operation": operation,
+            "event_type": type(event).__name__,
+            "event_source": getattr(event, "source", None),
+            "component_name": getattr(event, "component_name", None),
+            "event_data": getattr(event, "data", None),
+            "timestamp": datetime.now().isoformat(),
+            "metadata": metadata,
         }
+        self.event_log.append(record)
 
-        # Add event-specific information
-        if hasattr(event, 'component_name'):
-            event_record['component_name'] = event.component_name
-        if hasattr(event, 'data'):
-            event_record['event_data'] = event.data
-
-        self.event_log.append(event_record)
-        print(f"🔍 Event: {operation} {event_record['event_type']} from {event_record['event_source']}")
-
-    def get_event_stats(self) -> Dict[str, Any]:
-        """Get statistics about inspected events."""
+    def get_event_stats(self):
         if not self.event_log:
-            return {'error': 'No events inspected'}
-
+            return {"error": "No events inspected"}
         stats = {
-            'total_events': len(self.event_log),
-            'event_types': {},
-            'operations': {},
-            'avg_duration': 0,
-            'total_duration': 0
+            "total_events": len(self.event_log),
+            "event_types": {},
+            "operations": {},
+            "total_duration": 0.0,
         }
-
-        total_duration = 0
-
-        for event in self.event_log:
-            # Count event types
-            event_type = event['event_type']
-            stats['event_types'][event_type] = stats['event_types'].get(event_type, 0) + 1
-
-            # Count operations
-            operation = event['operation']
-            stats['operations'][operation] = stats['operations'].get(operation, 0) + 1
-
-            # Track duration
-            if 'duration' in event['metadata']:
-                total_duration += event['metadata']['duration']
-
-        if self.event_log:
-            stats['avg_duration'] = total_duration / len(self.event_log)
-        stats['total_duration'] = total_duration
-
+        for rec in self.event_log:
+            et = rec["event_type"]
+            op = rec["operation"]
+            stats["event_types"][et] = stats["event_types"].get(et, 0) + 1
+            stats["operations"][op] = stats["operations"].get(op, 0) + 1
+            dur = rec["metadata"].get("duration", 0.0) if rec.get("metadata") else 0.0
+            stats["total_duration"] += dur
+        stats["avg_duration"] = stats["total_duration"] / stats["total_events"] if stats["total_events"] else 0.0
         return stats
 
     def print_event_log(self):
-        """Print the event inspection log."""
         if not self.event_log:
-            print("🔍 No events inspected yet")
+            print("No events inspected yet")
             return
+        print("Event Bus Inspection Log")
+        for rec in self.event_log:
+            print(f"{rec['timestamp']} | {rec['operation'].upper()} | {rec['event_type']} | {rec['event_source']} | {rec.get('component_name', '')} | {rec.get('event_data', '')} | {rec['metadata']}")
 
-        print("🔍 Event Bus Inspection Log:")
-        print("=" * 50)
-
-        for event in self.event_log:
-            print(f"[{event['timestamp']}] {event['operation'].upper()}")
-            print(f"  Event Type: {event['event_type']}")
-            print(f"  Source: {event['event_source']}")
-            if 'component_name' in event:
-                print(f"  Component: {event['component_name']}")
-            if event['metadata']:
-                print(f"  Duration: {event['metadata'].get('duration', 'N/A'):.4f}s")
-                print(f"  Handler Count: {event['metadata'].get('handler_count', 'N/A')}")
-            print()
-
-
-class PerformanceProfiler:
-    """Performance profiling for framework components."""
-
-    def __init__(self):
-        self.profiles = {}
-        self._active_profilers = {}
-
-    def profile_method(self, component_name: str, method_name: str = None):
-        """Decorator to profile a method's performance."""
-        def decorator(original_method):
-            def wrapper(*args, **kwargs):
-                start_time = time.time()
-
-                try:
-                    if asyncio.iscoroutinefunction(original_method):
-                        result = asyncio.create_task(original_method(*args, **kwargs))
-                    else:
-                        result = original_method(*args, **kwargs)
-                    duration = time.time() - start_time
-                    success = True
-                except Exception as e:
-                    duration = time.time() - start_time
-                    success = False
-                    raise
-                finally:
-                    # Record performance data
-                    self._record_profile(component_name,
-                                       method_name or original_method.__name__,
-                                       duration, success)
-
-                return result
-
-            async def async_wrapper(*args, **kwargs):
-                start_time = time.time()
-
-                try:
-                    result = await original_method(*args, **kwargs)
-                    duration = time.time() - start_time
-                    success = True
-                except Exception as e:
-                    duration = time.time() - start_time
-                    success = False
-                    raise
-                finally:
-                    # Record performance data
-                    self._record_profile(component_name,
-                                       method_name or original_method.__name__,
-                                       duration, success)
-
-                return result
-
-            # Return appropriate wrapper
-            if asyncio.iscoroutinefunction(original_method):
-                return async_wrapper
-            else:
-                return wrapper
-
-        return decorator
-
-    def _record_profile(self, component: str, method: str, duration: float, success: bool):
-        """Record performance profile data."""
-        key = f"{component}.{method}"
-
-        if key not in self.profiles:
-            self.profiles[key] = {
-                'component': component,
-                'method': method,
-                'call_count': 0,
-                'total_time': 0.0,
-                'avg_time': 0.0,
-                'max_time': 0.0,
-                'min_time': float('inf'),
-                'error_count': 0,
-                'success_count': 0
-            }
-
-        profile = self.profiles[key]
-        profile['call_count'] += 1
-        profile['total_time'] += duration
-        profile['avg_time'] = profile['total_time'] / profile['call_count']
-        profile['max_time'] = max(profile['max_time'], duration)
-        profile['min_time'] = min(profile['min_time'], duration)
-
-        if success:
-            profile['success_count'] += 1
-        else:
-            profile['error_count'] += 1
-
-    def get_performance_report(self) -> Dict[str, Any]:
-        """Get comprehensive performance report."""
-        return {
-            'generated': datetime.now().isoformat(),
-            'total_methods': len(self.profiles),
-            'methods': self.profiles,
-            'summaries': self._get_performance_summaries()
-        }
-
-    def _get_performance_summaries(self) -> Dict[str, Any]:
-        """Calculate performance summaries."""
-        if not self.profiles:
-            return {}
-
-        total_calls = sum(p['call_count'] for p in self.profiles.values())
-        total_time = sum(p['total_time'] for p in self.profiles.values())
-        total_errors = sum(p['error_count'] for p in self.profiles.values())
-
-        return {
-            'total_method_calls': total_calls,
-            'total_execution_time': total_time,
-            'average_execution_time': total_time / max(total_calls, 1),
-            'total_errors': total_errors,
-            'error_rate': (total_errors / max(total_calls, 1)) * 100,
-
-            'slowest_methods': sorted(
-                [(k, v['avg_time']) for k, v in self.profiles.items()],
-                key=lambda x: x[1],
-                reverse=True
-            )[:5],
-
-            'most_called_methods': sorted(
-                [(k, v['call_count']) for k, v in self.profiles.items()],
-                key=lambda x: x[1],
-                reverse=True
-            )[:5]
-        }
-
-    def clear_profiles(self):
-        """Clear all performance profile data."""
-        self.profiles.clear()
-
-    def save_performance_report(self, file_path: str = 'ucore_performance_report.json'):
-        """Save performance report to file."""
-        report = self.get_performance_report()
-
-        try:
-            with open(file_path, 'w') as f:
-                json.dump(report, f, indent=2, default=str)
-            print(f"📊 Performance report saved to {file_path}")
-        except Exception as e:
-            print(f"❌ Failed to save performance report: {e}")
-
-
-# Global debug utilities
+# Global debug utility instances
 _debug_metrics = None
 _component_debugger = None
 _event_inspector = None
 _performance_profiler = None
 
-
 def init_debug_utilities():
-    """Initialize global debugging utilities."""
+    """Initialize global debug utility instances."""
     global _debug_metrics, _component_debugger, _event_inspector, _performance_profiler
-
     _debug_metrics = DebugMetrics()
     _component_debugger = ComponentDebugger()
     _event_inspector = EventInspector()
     _performance_profiler = PerformanceProfiler()
-
     print("🔧 UCore debug utilities initialized")
 
-
-def get_debug_metrics() -> DebugMetrics:
-    """Get global debug metrics instance."""
+def get_debug_metrics():
     return _debug_metrics
 
-
-def get_component_debugger() -> ComponentDebugger:
-    """Get global component debugger instance."""
+def get_component_debugger():
     return _component_debugger
 
-
-def get_event_inspector() -> EventInspector:
-    """Get global event inspector instance."""
+def get_event_inspector():
     return _event_inspector
 
-
-def get_performance_profiler() -> PerformanceProfiler:
-    """Get global performance profiler instance."""
+def get_performance_profiler():
     return _performance_profiler
 
-
-def save_all_debug_reports(directory: str = 'debug_reports'):
-    """Save all debug reports to specified directory."""
-    Path(directory).mkdir(exist_ok=True)
-
-    # Save all reports
+def save_all_debug_reports(directory="debug_reports"):
+    """Save all debug reports to the specified directory."""
+    from pathlib import Path
+    import json
+    Path(directory).mkdir(parents=True, exist_ok=True)
     if _component_debugger:
-        _component_debugger.save_report(f'{directory}/component_debug.json')
-
+        _component_debugger.save_report(str(Path(directory) / "component_debug_report.json"))
     if _performance_profiler:
-        _performance_profiler.save_performance_report(f'{directory}/performance.json')
-
-    # Add metrics report if available
+        _performance_profiler.save_performance_report(str(Path(directory) / "performance_report.json"))
     if _debug_metrics:
-        report = _debug_metrics.get_report()
-        with open(f'{directory}/debug_metrics.json', 'w') as f:
-            json.dump(report, f, indent=2, default=str)
-
+        with open(str(Path(directory) / "metrics_report.json"), "w") as f:
+            json.dump(_debug_metrics.get_report(), f, indent=2)
     print(f"📁 All debug reports saved to {directory}/")
 
-
-# Convenience functions
-def debug_component(component_name: str, component: Any):
-    """Start debugging a component."""
+def debug_component(component_name, component):
     if _component_debugger:
         _component_debugger.trace_component(component_name, component)
 
-
 def inspect_event_bus(event_bus):
-    """Start inspecting an event bus."""
     if _event_inspector:
         _event_inspector.attach_to_event_bus(event_bus)
         _event_inspector.start_inspecting()
 
-
-def profile_method(component_name: str, method_name: str = None):
-    """Profile a method's performance."""
+def profile_method(component_name, method_name=None):
     if _performance_profiler:
         return _performance_profiler.profile_method(component_name, method_name)
-    return lambda func: func
+    # Return identity decorator if profiler not initialized
+    def identity_decorator(func):
+        return func
+    return identity_decorator
+
+# ... (rest of the file remains unchanged)

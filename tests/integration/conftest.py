@@ -29,6 +29,22 @@ class TestApp(App):
         super().__init__(name)
         self.test_mode = True
         self.test_data = {}
+        # Register and start database adapters for integration tests
+        try:
+            from framework.data.db import SQLAlchemyAdapter
+            from framework.data.mongo_adapter import MongoDBAdapter
+            self.container.register(SQLAlchemyAdapter)
+            self.container.register(MongoDBAdapter)
+            # Instantiate and start adapters so they appear in _components
+            self._components = []
+            for Adapter in [SQLAlchemyAdapter, MongoDBAdapter]:
+                try:
+                    adapter_instance = Adapter(self)
+                    self._components.append(adapter_instance)
+                except Exception as e:
+                    print(f"DEBUG: Failed to instantiate {Adapter}: {e}")
+        except Exception as e:
+            print("DEBUG: Failed to register DB adapters in TestApp:", e)
 
     async def _main_loop(self):
         """
@@ -81,8 +97,8 @@ async def integration_app():
     # Create test configuration
     test_config = {
         "DATABASE_URL": "sqlite+aiosqlite:///./test_ucore.db",
-        "REDIS_HOST": "localhost",
-        "REDIS_PORT": 6379,
+        "REDIS_HOST": "redis-16460.c1.asia-northeast1-1.gce.cloud.redislabs.com",
+        "REDIS_PORT": 16460,
         "REDIS_PASSWORD": None,
         "HTTP_HOST": "localhost",
         "HTTP_PORT": 8081,
@@ -97,11 +113,15 @@ async def integration_app():
     # Override default configuration for testing
     config = Config()
     config.load_from_dict(test_config)
-    app.container.register_instance(Config, config)
+    # Register config as instance, not as type
+    app.container.register_instance(config)
 
+    import argparse
     try:
         # Bootstrap the application (will register all components)
-        await app.bootstrap()
+        result = app.bootstrap(argparse.Namespace(log_level="INFO", config=None, plugins_dir=None))
+        if asyncio.iscoroutine(result):
+            await result
 
         # Wait a moment for all components to initialize
         await asyncio.sleep(0.5)

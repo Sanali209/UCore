@@ -153,10 +153,12 @@ class DiskCacheAdapter(Component):
         if not self.cache:
             return {"error": "Cache not initialized"}
 
+        directory = self.cache_dir if self.cache_dir is not None else None
+
         return {
             "count": len(self.cache),
             "size_limit": self.size_limit,
-            "directory": str(self.cache_dir),
+            "directory": directory,
             "eviction_policy": str(self.eviction_policy),
             "type": "diskcache.Index"
         }

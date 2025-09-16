@@ -69,6 +69,7 @@ class TestFletAdapterLifecyle:
         # Verify task was stored
         assert adapter._flet_task == mock_task
 
+    @pytest.mark.asyncio
     async def test_start_async_context(self):
         """Test start in async context."""
         app = Mock()
@@ -147,6 +148,7 @@ class TestFletAdapterLifecyle:
 class TestFletAdapterErrorHandling:
     """Test FletAdapter error handling scenarios."""
 
+    @pytest.mark.asyncio
     @patch('framework.desktop.ui.flet.flet_adapter.ft.app_async')
     async def test_start_with_flet_error(self, mock_app_async):
         """Test handling of errors during Flet app initialization."""
@@ -172,6 +174,7 @@ class TestFletAdapterErrorHandling:
 class TestFletAdapterIntegration:
     """Test FletAdapter integration scenarios."""
 
+    @pytest.mark.asyncio
     @patch('framework.desktop.ui.flet.flet_adapter.ft.app_async')
     async def test_multiple_start_stop_cycles(self, mock_app_async):
         """Test multiple start/stop cycles."""
@@ -205,6 +208,7 @@ class TestFletAdapterIntegration:
 
             assert adapter._flet_task == mock_task2
 
+    @pytest.mark.asyncio
     @patch('framework.desktop.ui.flet.flet_adapter.ft.app_async')
     async def test_default_port_usage(self, mock_app_async):
         """Test that default port (8085) is used when not specified."""
@@ -239,6 +243,7 @@ class TestFletAdapterIntegration:
         assert hasattr(adapter, 'start')  # Should have Component methods
         assert hasattr(adapter, 'stop')   # Should have Component methods
 
+    @pytest.mark.asyncio
     async def test_task_storage(self):
         """Test that the task is properly stored for lifecycle management."""
         app = Mock()
@@ -246,6 +251,7 @@ class TestFletAdapterIntegration:
         adapter = FletAdapter(app, target_func)
 
         mock_task = Mock()
+        mock_task.done.return_value = False  # Ensure cancel will be called
         mock_loop = Mock()
         mock_loop.create_task.return_value = mock_task
 
@@ -260,6 +266,7 @@ class TestFletAdapterIntegration:
             adapter.stop()
             mock_task.cancel.assert_called_once()
 
+    @pytest.mark.asyncio
     @patch('framework.desktop.ui.flet.flet_adapter.ft.app_async')
     async def test_different_target_functions(self, mock_app_async):
         """Test with different target functions."""
@@ -294,6 +301,7 @@ class TestFletAdapterIntegration:
                     view=ft.WEB_BROWSER
                 )
 
+    @pytest.mark.asyncio
     @patch('framework.desktop.ui.flet.flet_adapter.ft.app_async')
     async def test_port_range_variations(self, mock_app_async):
         """Test adapter with various port numbers."""

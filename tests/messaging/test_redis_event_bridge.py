@@ -126,6 +126,7 @@ class TestRedisToEventBusBridge:
 
         assert redis_channel in self.bridge.redis_listeners
 
+    @pytest.mark.asyncio
     async def test_listener_callback_with_json_message(self):
         """Test listener callback with JSON message."""
         from unittest.mock import AsyncMock
@@ -137,7 +138,7 @@ class TestRedisToEventBusBridge:
         mock_user_event = Mock()
         mock_user_event.__class__.__name__ = 'UserEvent'
 
-        with patch('framework.messaging.redis_event_bridge.from framework.events import UserEvent', Mock(return_value=mock_user_event)):
+        with patch('framework.messaging.events.UserEvent', Mock(return_value=mock_user_event)):
             with patch('framework.messaging.redis_event_bridge.json.loads', return_value={'type': 'test', 'data': 'value'}):
                 self.bridge.app.container.get.return_value = mock_event_bus
 
@@ -149,13 +150,15 @@ class TestRedisToEventBusBridge:
                 # Verify UserEvent creation and publishing
                 mock_event_bus.publish.assert_called_once()
 
+    @pytest.mark.asyncio
     async def test_listener_callback_with_plain_text(self):
         """Test listener callback with plain text message."""
         redis_channel = 'test.channel'
 
         mock_event_bus = AsyncMock()
 
-        with patch('framework.messaging.redis_event_bridge.from framework.events import UserEvent'):
+        # Patch the correct import path or mock UserEvent directly
+        with patch('framework.messaging.events.UserEvent'):
             with patch('framework.messaging.redis_event_bridge.json.loads', side_effect=json.JSONDecodeError('Invalid JSON', '', 0)):
                 self.bridge.app.container.get.return_value = mock_event_bus
 
@@ -165,6 +168,7 @@ class TestRedisToEventBusBridge:
 
                 mock_event_bus.publish.assert_called_once()
 
+    @pytest.mark.asyncio
     async def test_listener_callback_error_handling(self):
         """Test listener callback error handling."""
         redis_channel = 'test.channel'
@@ -177,7 +181,7 @@ class TestRedisToEventBusBridge:
 
         self.bridge.app.container.get.return_value = mock_event_bus
 
-        with patch('framework.messaging.redis_event_bridge.from framework.events import UserEvent'):
+        with patch('framework.messaging.events.UserEvent'):
             listener = self.bridge.redis_listeners[redis_channel]
 
             await listener("test message")
@@ -342,6 +346,7 @@ class TestRedisAdapterEventBridgeIntegration:
 class TestBridgeForwarderExecution:
     """Test actual execution of bridge forwarding."""
 
+    @pytest.mark.asyncio
     async def test_eventbus_to_redis_forwarder_execution(self):
         """Test execution of EventBus to Redis forwarder."""
         from unittest.mock import AsyncMock
@@ -372,6 +377,7 @@ class TestBridgeForwarderExecution:
             # This is expected - it would work when mixed into RedisAdapter
             pass
 
+    @pytest.mark.asyncio
     async def test_redis_forwarder_behavior_check(self):
         """Test Redis forwarder behavior without actual publishing."""
         from unittest.mock import AsyncMock

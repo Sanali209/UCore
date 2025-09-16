@@ -56,10 +56,13 @@ class MongoDBAdapter(Component):
         
         # DEV-1.6: Inject DB client into models
         for model_cls in self._registered_models:
-            model_cls.inject_db_client(self.db, self.bulk_op_cache)
-            self.app.logger.debug(f"Injected DB client into model: {model_cls.__name__}")
-            # DEV-3.3: Create indexes now that the client is injected
-            await model_cls._create_indexes()
+            try:
+                model_cls.inject_db_client(self.db, self.bulk_op_cache)
+                self.app.logger.debug(f"Injected DB client into model: {model_cls.__name__}")
+                # DEV-3.3: Create indexes now that the client is injected
+                await model_cls._create_indexes()
+            except Exception as e:
+                self.app.logger.error(f"Error injecting DB client into model {getattr(model_cls, '__name__', str(model_cls))}: {e}")
 
     async def stop(self):
         """
@@ -87,10 +90,6 @@ class MongoDBAdapter(Component):
         # Get all keys from the bulk cache
         all_keys = list(self.bulk_op_cache.keys())
 
-        # Use BatchBuilder for efficient bulk processing with progress
-        from SLM.iterable.bach_builder import BatchBuilder
-        import tqdm
-
         for key in all_keys:
             if key.startswith("DeleteMany_"):
                 collection_name = key.split("_", 1)[1]
@@ -104,12 +103,10 @@ class MongoDBAdapter(Component):
                         # Convert to DeleteMany operations
                         delete_ops = [DeleteMany(query) for query in bulk_ops if query]
 
-                        # Use BatchBuilder and tqdm for progress
-                        bach_builder = BatchBuilder(delete_ops, batch_size=128)
-                        batched_ops = list(bach_builder.bach)
-
-                        # Show progress with tqdm
-                        for batch in tqdm.tqdm(batched_ops, desc=f"Deleting from {collection_name}"):
+                        # Process in batches of 128
+                        batch_size = 128
+                        for i in range(0, len(delete_ops), batch_size):
+                            batch = delete_ops[i:i+batch_size]
                             if batch:
                                 collection.bulk_write(batch)
 

@@ -4,7 +4,7 @@ Core abstractions for resource management in UCore framework
 """
 
 import asyncio
-import logging
+from framework.monitoring.logging import Logging
 import time
 from abc import ABC, abstractmethod
 from enum import Enum
@@ -20,7 +20,7 @@ from .exceptions import (
 from .events import ResourceEvent
 
 
-logger = logging.getLogger(__name__)
+logger = Logging().get_logger(__name__)
 
 
 class ResourceState(Enum):
