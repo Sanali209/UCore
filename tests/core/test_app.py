@@ -1,3 +1,8 @@
+import sys
+sys.path.insert(0, r"D:\UCore")
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
+
 import pytest
 import asyncio
 from unittest.mock import Mock, patch, call, AsyncMock
@@ -242,5 +247,3 @@ class TestErrorHandling:
             # Verify error was logged
             app.logger.error.assert_called()
             # Verify other components still start (though we only have one)
-
-

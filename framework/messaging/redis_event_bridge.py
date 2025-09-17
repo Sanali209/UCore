@@ -78,6 +78,16 @@ class EventBusToRedisBridge:
             Dictionary with standardized message format
         """
         try:
+            # If event is not an object with attributes, treat as fallback
+            if not hasattr(event, "__dict__") and not hasattr(event, "data"):
+                return {
+                    'event_type': 'unknown',
+                    'error': 'Event is not a valid object',
+                    'original_event': str(event),
+                    'instance_id': self.bridge_settings.get('instance_id', 'unknown'),
+                    'timestamp': datetime.utcnow().isoformat(),
+                }
+
             # Extract event attributes
             event_data = {
                 'event_type': event.__class__.__name__,
@@ -165,7 +175,7 @@ class RedisToEventBusBridge:
 
                 # Publish to EventBus
                 if hasattr(self, 'app') and self.app:
-                    from framework.events import UserEvent  # Import here to avoid circular imports
+                    from framework.messaging.events import UserEvent  # Import here to avoid circular imports
                     user_event = UserEvent(
                         event_type=f"redis:{redis_channel}",
                         data={
@@ -179,7 +189,9 @@ class RedisToEventBusBridge:
                     try:
                         event_bus = self.app.container.get("EventBus", type("EventBus", (), {})())
                         if event_bus:
-                            event_bus.publish(user_event)
+                            result = event_bus.publish(user_event)
+                            if asyncio.iscoroutine(result):
+                                await result
 
                             if self.app and hasattr(self.app, 'logger'):
                                 self.app.logger.debug(f"Received Redis message from {redis_channel}, created EventBus event: {user_event.event_type}")

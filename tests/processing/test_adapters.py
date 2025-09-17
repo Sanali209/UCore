@@ -17,8 +17,10 @@ def test_task_queue_adapter_init():
 async def test_task_queue_adapter_lifecycle(monkeypatch):
     app = DummyApp()
     adapter = TaskQueueAdapter(app)
-    monkeypatch.setattr(adapter, "start", lambda: None)
-    monkeypatch.setattr(adapter, "stop", lambda: None)
+    async def async_noop(*args, **kwargs):
+        pass
+    monkeypatch.setattr(adapter, "start", async_noop)
+    monkeypatch.setattr(adapter, "stop", async_noop)
     await adapter.start()
     await adapter.stop()
 

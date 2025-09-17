@@ -40,7 +40,7 @@ def test_pool_entry_init():
 
 class DummyResourcePool(ResourcePool):
     def __init__(self):
-        super().__init__(max_size=2)
+        super().__init__("dummy_resource", max_size=2)
         self._connections = []
 
     async def _create_connection(self):

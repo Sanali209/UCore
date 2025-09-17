@@ -42,10 +42,14 @@ class ResourcePool(ABC):
         max_idle_time: float = 300.0,  # 5 minutes
         health_check_interval: float = 30.0,
         acquire_timeout: float = 10.0,
-        event_bus=None
+        event_bus=None,
+        max_size: int = None
     ):
         self.resource_name = resource_name
-        self.pool_size = pool_size
+        if max_size is not None:
+            self.pool_size = max_size
+        else:
+            self.pool_size = pool_size
         self.min_pool_size = min_pool_size
         self.max_idle_time = max_idle_time
         self.health_check_interval = health_check_interval
@@ -69,7 +73,7 @@ class ResourcePool(ABC):
         self._maintenance_task: Optional[asyncio.Task] = None
         self._is_shutdown = False
 
-        logger.info(f"Resource pool {resource_name} created with size {pool_size}")
+        logger.info(f"Resource pool {resource_name} created with size {self.pool_size}")
 
     @property
     def size(self) -> int:

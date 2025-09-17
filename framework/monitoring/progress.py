@@ -19,13 +19,16 @@ class TqdmProgressVisualizer(ProgressVisualizer):
 
     def update_progress(self, progress: int, max_progress: int, message: str, description: str):
         delta = progress - self.last_progress
-        if delta > 0:
-            self.pbar.update(delta)
-        self.pbar.set_description_str(description)
-        self.pbar.set_postfix_str(message)
-        self.last_progress = progress
-        if progress >= max_progress:
-            self.pbar.close()
+        if self.pbar is not None:
+            if delta > 0:
+                self.pbar.update(delta)
+            self.pbar.set_description_str(description)
+            self.pbar.set_postfix_str(message)
+            self.last_progress = progress
+            if progress >= max_progress:
+                self.pbar.close()
+        else:
+            self.last_progress = progress
 
 class LoguruProgressVisualizer(ProgressVisualizer):
     def update_progress(self, progress: int, max_progress: int, message: str, description: str):

@@ -1,3 +1,8 @@
+import sys
+sys.path.insert(0, r"D:\UCore")
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
+
 import pytest
 from loguru import logger
 from tqdm import tqdm

@@ -4,8 +4,7 @@ Redis Message Bus for UCore Framework.
 Provides pub/sub messaging and stream processing for event-driven architectures.
 """
 
-from redis import asyncio as aioredis
-from redis.asyncio import Redis
+import redis.asyncio
 from redis.exceptions import ConnectionError, TimeoutError
 import json
 import asyncio
@@ -42,7 +41,7 @@ class RedisAdapter(Component, EventBusRedisBridge):
                 "REDIS_PASSWORD": None
             }
 
-        self.redis: Optional[Redis] = None
+        self.redis = None
         self.subscribers: Dict[str, Callable] = {}
         self.channels: Dict[str, asyncio.Task] = {}
         self.stream_consumers: Dict[str, asyncio.Task] = {}
@@ -139,6 +138,7 @@ class RedisAdapter(Component, EventBusRedisBridge):
         """
         Initialize Redis connection and start subscribers.
         """
+        print(f"[DEBUG] RedisAdapter.start() called in module: {__name__}, file: {__file__}")
         try:
             # Create Redis connection
             host = self.config.get("REDIS_HOST", "localhost")
@@ -146,7 +146,7 @@ class RedisAdapter(Component, EventBusRedisBridge):
             db = self.config.get("REDIS_DB", 0)
             password = self.config.get("REDIS_PASSWORD")
 
-            self.redis = Redis(
+            self.redis = redis.asyncio.Redis(
                 host=host,
                 port=port,
                 db=db,

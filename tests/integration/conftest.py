@@ -1,3 +1,8 @@
+import sys
+sys.path.insert(0, r"D:\UCore")
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
+
 """
 Integration test fixtures and configuration for UCore framework.
 

@@ -107,6 +107,9 @@ class TestRedisToEventBusBridge:
         assert redis_channel in self.bridge.redis_listeners
         assert callable(self.bridge.redis_listeners[redis_channel])
 
+    def _register_test_channel(self):
+        self.bridge.register_redis_listener('test.channel')
+
     def test_register_redis_listener_disabled(self):
         """Test Redis listener registration when bridge is disabled."""
         self.bridge.bridge_settings['redis_to_eventbus_enabled'] = False
@@ -132,46 +135,56 @@ class TestRedisToEventBusBridge:
         from unittest.mock import AsyncMock
 
         redis_channel = 'test.channel'
+        self._register_test_channel()
 
         # Mock dependencies for listener
-        mock_event_bus = AsyncMock()
+        mock_event_bus = Mock()
+        mock_event_bus.publish = Mock()
         mock_user_event = Mock()
         mock_user_event.__class__.__name__ = 'UserEvent'
 
-        with patch('framework.messaging.events.UserEvent', Mock(return_value=mock_user_event)):
+        with patch('framework.messaging.events.UserEvent', Mock(return_value=mock_user_event)) as user_event_patch:
             with patch('framework.messaging.redis_event_bridge.json.loads', return_value={'type': 'test', 'data': 'value'}):
-                self.bridge.app.container.get.return_value = mock_event_bus
+                def always_return_mock_eventbus(*args, **kwargs):
+                    return mock_event_bus
+                with patch.object(self.bridge.app.container, "get", side_effect=always_return_mock_eventbus):
+                    listener = self.bridge.redis_listeners[redis_channel]
 
-                listener = self.bridge.redis_listeners[redis_channel]
+                    # Test the listener
+                    await listener('{"type": "test", "data": "value"}')
 
-                # Test the listener
-                await listener('{"type": "test", "data": "value"}')
-
-                # Verify UserEvent creation and publishing
-                mock_event_bus.publish.assert_called_once()
+                    # Debug: check if UserEvent was created
+                    assert user_event_patch.called, "UserEvent was not created"
+                    # Verify UserEvent creation and publishing
+                    mock_event_bus.publish.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_listener_callback_with_plain_text(self):
         """Test listener callback with plain text message."""
         redis_channel = 'test.channel'
+        self._register_test_channel()
 
-        mock_event_bus = AsyncMock()
+        mock_event_bus = Mock()
+        mock_event_bus.publish = Mock()
 
         # Patch the correct import path or mock UserEvent directly
-        with patch('framework.messaging.events.UserEvent'):
+        with patch('framework.messaging.events.UserEvent') as user_event_patch:
             with patch('framework.messaging.redis_event_bridge.json.loads', side_effect=json.JSONDecodeError('Invalid JSON', '', 0)):
-                self.bridge.app.container.get.return_value = mock_event_bus
+                def always_return_mock_eventbus(*args, **kwargs):
+                    return mock_event_bus
+                with patch.object(self.bridge.app.container, "get", side_effect=always_return_mock_eventbus):
+                    listener = self.bridge.redis_listeners[redis_channel]
 
-                listener = self.bridge.redis_listeners[redis_channel]
+                    await listener("plain text message")
 
-                await listener("plain text message")
-
-                mock_event_bus.publish.assert_called_once()
+                    assert user_event_patch.called, "UserEvent was not created"
+                    mock_event_bus.publish.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_listener_callback_error_handling(self):
         """Test listener callback error handling."""
         redis_channel = 'test.channel'
+        self._register_test_channel()
 
         mock_event_bus = AsyncMock()
         mock_event_bus.publish.side_effect = Exception("Publish failed")
@@ -322,6 +335,7 @@ class TestRedisAdapterEventBridgeIntegration:
 
     def test_bridge_settings_override(self):
         """Test bridge settings override from config."""
+        from framework.messaging.redis_adapter import RedisAdapter
         # Create adapter with config that has bridge settings
         app_with_config = Mock()
         mock_config = Mock()
@@ -360,7 +374,7 @@ class TestBridgeForwarderExecution:
         mock_publish = AsyncMock(return_value=True)
 
         # Create and register forwarder
-        await bridge.register_event_forwarder(AppStartedEvent, 'ucore.events.app.started')
+        bridge.register_event_forwarder(AppStartedEvent, 'ucore.events.app.started')
 
         # Manually invoke the forwarder
         event = Mock()

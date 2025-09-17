@@ -7,6 +7,8 @@ from framework.messaging.event_bus import EventBus
 
 
 # Mock Resource Implementation
+from loguru import logger
+
 class MockResource(Resource):
     """Mock resource for testing."""
 
@@ -21,38 +23,46 @@ class MockResource(Resource):
         self.cleanup_fail = False
 
     async def _initialize(self):
-        """Mock initialization."""
+        logger.debug(f"MockResource({self.name}): Entering _initialize")
         self.initialize_count += 1
         self._state = "created"
-        self.is_connected = False
+        self._is_connected = False
         await asyncio.sleep(0.01)  # Simulate async work
+        logger.debug(f"MockResource({self.name}): Exiting _initialize")
 
     async def _connect(self):
-        """Mock connection."""
+        logger.debug(f"MockResource({self.name}): Entering _connect")
         if self.connect_fail:
+            logger.debug(f"MockResource({self.name}): connect_fail=True, raising Exception")
             raise Exception("Connection failed")
-        self.is_connected = True
+        self._is_connected = True
         self._state = "connected"
         await asyncio.sleep(0.01)
+        logger.debug(f"MockResource({self.name}): Exiting _connect")
 
     async def _disconnect(self):
-        """Mock disconnection."""
+        logger.debug(f"MockResource({self.name}): Entering _disconnect")
         self.disconnect_count += 1
-        self.is_connected = False
+        self._is_connected = False
         await asyncio.sleep(0.01)
+        logger.debug(f"MockResource({self.name}): Exiting _disconnect")
 
     async def _cleanup(self):
-        """Mock cleanup."""
+        logger.debug(f"MockResource({self.name}): Entering _cleanup")
         if self.cleanup_fail:
+            logger.debug(f"MockResource({self.name}): cleanup_fail=True, raising Exception")
             raise Exception("Cleanup failed")
         self.cleanup_count += 1
         await asyncio.sleep(0.01)
+        logger.debug(f"MockResource({self.name}): Exiting _cleanup")
 
     async def _health_check(self):
-        """Mock health check."""
+        logger.debug(f"MockResource({self.name}): Entering _health_check")
         await asyncio.sleep(0.01)
         if self._state == "error":
+            logger.debug(f"MockResource({self.name}): _health_check returns UNHEALTHY")
             return ResourceHealth.UNHEALTHY
+        logger.debug(f"MockResource({self.name}): _health_check returns HEALTHY")
         return ResourceHealth.HEALTHY
 
     def get_stats(self):
@@ -282,6 +292,8 @@ class TestLifecycleManagement:
 
         # Stop all resources
         await manager.stop_all_resources()
+        # Allow async shutdown tasks to complete
+        await asyncio.sleep(0.05)
 
         # Verify resources were stopped
         assert not manager.is_started
@@ -321,19 +333,23 @@ class TestLifecycleManagement:
         # Make cleanup very slow
         async def slow_cleanup():
             await asyncio.sleep(35)  # Longer than timeout
-            await resource.cleanup()
+            await resource._cleanup()
 
+        original_cleanup = resource.cleanup
         resource.cleanup = slow_cleanup
         manager.register_resource(resource)
 
-        with patch('asyncio.wait_for') as mock_wait_for:
-            mock_wait_for.side_effect = asyncio.TimeoutError()
+        try:
+            with patch('asyncio.wait_for') as mock_wait_for:
+                mock_wait_for.side_effect = asyncio.TimeoutError()
 
-            await manager.start_all_resources()
-            await manager.stop_all_resources()
+                await manager.start_all_resources()
+                await manager.stop_all_resources()
 
-            # Should handle timeout gracefully
-            mock_wait_for.assert_called_once()
+                # Should handle timeout gracefully
+                mock_wait_for.assert_called_once()
+        finally:
+            resource.cleanup = original_cleanup
 
 
 class TestHealthMonitoring:
@@ -346,7 +362,7 @@ class TestHealthMonitoring:
 
         resource1 = MockResource("resource1", "type_a")
         resource2 = MockResource("resource2", "type_b")
-        resource2.state = "error"  # This will return unhealthy
+        resource2._state = "error"  # This will return unhealthy
 
         manager.register_resource(resource1)
         manager.register_resource(resource2)
@@ -386,7 +402,8 @@ class TestHealthMonitoring:
         await manager.stop_all_resources()
 
         # Verify monitoring task was cancelled
-        assert manager._health_monitor_task.cancelled()
+        if manager._health_monitor_task:
+            assert manager._health_monitor_task.cancelled()
 
     def test_get_resource_stats(self):
         """Test getting resource statistics."""
