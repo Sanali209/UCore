@@ -1,4 +1,4 @@
-from framework.core.plugins import Plugin
+from UCoreFrameworck.core.plugins import Plugin
 
 class HelloPlugin(Plugin):
     def register(self, app):

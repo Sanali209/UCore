@@ -9,7 +9,7 @@ from unittest.mock import Mock, AsyncMock, patch
 from bson import ObjectId
 import threading
 
-from framework.data.mongo_orm import (
+from UCoreFrameworck.data.mongo_orm import (
     ReferenceField, LazyReference, ReferenceListField,
     Field, LRUCache, DbRecordMeta, BaseMongoRecord,
     DocumentCreatedEvent, DocumentDeletedEvent, DocumentUpdatedEvent
@@ -661,7 +661,7 @@ class TestBaseMongoRecord:
 
             assert instance.props_cache == {}
 
-    @patch('framework.data.mongo_orm.BaseMongoRecord.collection')
+    @patch('UCoreFrameworck.data.mongo_orm.BaseMongoRecord.collection')
     @pytest.mark.asyncio
     async def test_get_by_id_success(self, mock_collection_method):
         """Test get_by_id method success."""
@@ -674,7 +674,7 @@ class TestBaseMongoRecord:
         assert result is not None
         assert result.props_cache["name"] == "John"
 
-    @patch('framework.data.mongo_orm.BaseMongoRecord.collection')
+    @patch('UCoreFrameworck.data.mongo_orm.BaseMongoRecord.collection')
     @pytest.mark.asyncio
     async def test_get_by_id_not_found(self, mock_collection_method):
         """Test get_by_id method with document not found."""
@@ -686,7 +686,7 @@ class TestBaseMongoRecord:
 
         assert result is None
 
-    @patch('framework.data.mongo_orm.BaseMongoRecord.collection')
+    @patch('UCoreFrameworck.data.mongo_orm.BaseMongoRecord.collection')
     @pytest.mark.asyncio
     async def test_find_one_success(self, mock_collection_method):
         """Test find_one method success."""
@@ -702,7 +702,7 @@ class TestBaseMongoRecord:
 
 
 
-    @patch('framework.data.mongo_orm.BaseMongoRecord.collection')
+    @patch('UCoreFrameworck.data.mongo_orm.BaseMongoRecord.collection')
     @pytest.mark.asyncio
     async def test_new_record_success(self, mock_collection_method):
         """Test new_record method creates new document."""
@@ -723,7 +723,7 @@ class TestBaseMongoRecord:
         }
         mock_collection.insert_one.assert_called_with(expected_data)
 
-    @patch('framework.data.mongo_orm.BaseMongoRecord.collection')
+    @patch('UCoreFrameworck.data.mongo_orm.BaseMongoRecord.collection')
     @pytest.mark.asyncio
     async def test_save_success(self, mock_collection_method):
         """Test save method updates document."""
@@ -741,7 +741,7 @@ class TestBaseMongoRecord:
             upsert=True
         )
 
-    @patch('framework.data.mongo_orm.BaseMongoRecord.collection')
+    @patch('UCoreFrameworck.data.mongo_orm.BaseMongoRecord.collection')
     @pytest.mark.asyncio
     async def test_delete_success(self, mock_collection_method):
         """Test delete method removes document."""
@@ -754,7 +754,7 @@ class TestBaseMongoRecord:
 
         mock_collection.delete_one.assert_called_with({"_id": instance._id})
 
-    @patch('framework.data.mongo_orm.BaseMongoRecord.collection')
+    @patch('UCoreFrameworck.data.mongo_orm.BaseMongoRecord.collection')
     @pytest.mark.asyncio
     async def test_bulk_update_success(self, mock_collection_method):
         """Test bulk_update method."""

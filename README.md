@@ -3,7 +3,7 @@
 [![Python Version](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
-**UCore** is a modular, domain-driven, production-ready enterprise framework for building modern, observable, and scalable Python services. It features a component-based architecture, strong OOP principles, and extensibility across 9 specialized domains.
+**UCore** is a modular, domain-driven, production-ready enterprise UCoreFrameworck for building modern, observable, and scalable Python services. It features a component-based architecture, strong OOP principles, and extensibility across 9 specialized domains.
 
 ---
 
@@ -18,7 +18,7 @@
 - **Resource Provider System:** Unified orchestration, 4 resource types, connection pooling, health monitoring.
 - **Observability:** Prometheus metrics, loguru logging, health checks, tracing, tqdm-based progress.
 - **Background Processing:** Task queue, CLI, worker management.
-- **Database & Cache:** SQLAlchemy, MongoDB ODM, disk cache.
+- **Database & Cache:** MongoDB ODM, disk cache.
 - **Comprehensive Testing:** Extensive unit and integration tests for all domains and features.
 - **Undo/Redo System:** UndoSystem component for modular, extensible undo/redo functionality with loguru logging.
 
@@ -26,14 +26,14 @@
 
 ## 📁 Project Structure
 
-- `framework/core`: App, Component, Config, DI, Plugins, Settings
-- `framework/data`: DB, DiskCache, MongoDB Adapter/ORM
-- `framework/desktop/ui`: FletAdapter, PySide6Adapter
-- `framework/messaging`: Events, EventBus, RedisAdapter, Bridges
-- `framework/monitoring`: Logging, Metrics, Observability
-- `framework/processing`: TaskQueue, CLI, Worker, CPU tasks
-- `framework/resource`: ResourceManager, Resource types, Pooling
-- `framework/web`: HttpServer
+- `UCoreFrameworck/core`: App, Component, Config, DI, Plugins, Settings
+- `UCoreFrameworck/data`: DB, DiskCache, MongoDB Adapter/ORM
+- `UCoreFrameworck/desktop/ui`: FletAdapter, PySide6Adapter
+- `UCoreFrameworck/messaging`: Events, EventBus, RedisAdapter, Bridges
+- `UCoreFrameworck/monitoring`: Logging, Metrics, Observability
+- `UCoreFrameworck/processing`: TaskQueue, CLI, Worker, CPU tasks
+- `UCoreFrameworck/resource`: ResourceManager, Resource types, Pooling
+- `UCoreFrameworck/web`: HttpServer
 
 ---
 
@@ -56,8 +56,8 @@ pip install -r requirements.txt
 ### Minimal Example
 
 ```python
-from framework import App
-from framework.web import HttpServer
+from UCoreFrameworck import App
+from UCoreFrameworck.web import HttpServer
 
 app = App("MyService")
 http_server = HttpServer(app)
@@ -89,7 +89,7 @@ ucore shell
 - **Resource Management:** ResourceManager, 4 resource types, lifecycle, pooling, health checks.
 - **Observability:** Prometheus metrics, logging, health endpoints, tracing.
 - **Background Tasks:** Task queue, CLI, worker management.
-- **Database/Cache:** SQLAlchemy, MongoDB ODM, disk cache.
+- **Database/Cache:** MongoDB ODM, disk cache.
 - **Web/Desktop UI:** Flet (web), PySide6 (desktop).
 - **Undo/Redo System:** `UndoSystem` component for undo/redo stacks, OOP, and logging.
 
@@ -98,7 +98,7 @@ ucore shell
 ## 📝 Undo System Example
 
 ```python
-from framework.core.undo import UndoSystem
+from UCoreFrameworck.core.undo import UndoSystem
 
 undo_system = UndoSystem()
 undo_system.add_undo_item(lambda: print("undo!"), lambda: print("redo!"), description="Sample action")
@@ -148,9 +148,5 @@ MIT License. See LICENSE for details.
 
 ## 📚 Documentation
 
-- See [`docs/ucore-framework-guide.md`](docs/ucore-framework-guide.md) for a complete overview.
-- [Project Structure Guide](docs/project-structure-guide.md)
-- [Domain-Driven Architecture](docs/domain-driven-architecture.md)
-- [Monitoring & Debugging Guide](docs/monitoring-debugging-guide.md)
-- [MongoDB ODM Guide](docs/data/mongodb-odm-guide.md)
-- Additional guides and examples in `docs/`.
+- See [`docs/index.md`](docs/index.md) for the full documentation index and all guides.
+- Explore the [`examples/`](examples/) directory for runnable demos of all major features.

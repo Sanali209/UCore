@@ -19,10 +19,10 @@ from typing import Dict, Any, List
 from datetime import datetime
 
 from tests.integration.conftest import TestApp
-from framework.core.config import Config
-from framework.data.mongo_adapter import MongoDBAdapter
-from framework.data.db import SQLAlchemyAdapter
-from framework.messaging.events import DBConnectionEvent, DBQueryEvent, DBTransactionEvent
+from UCoreFrameworck.core.config import Config
+from UCoreFrameworck.data.mongo_adapter import MongoDBAdapter
+from UCoreFrameworck.data.db import SQLAlchemyAdapter
+from UCoreFrameworck.messaging.events import DBConnectionEvent, DBQueryEvent, DBTransactionEvent
 
 
 class TestDatabaseInitialization:

@@ -18,12 +18,12 @@ This guide covers monitoring, logging, metrics, and debugging tools in UCore, in
 
 ## Metrics
 
-- Prometheus-compatible metrics via `framework/monitoring/metrics.py`.
+- Prometheus-compatible metrics via `UCoreFrameworck/monitoring/metrics.py`.
 - HTTP metrics, custom counters, histograms, and gauges.
 - Exposed at `/metrics` endpoint for scraping.
 - Example:
   ```python
-  from framework.monitoring.metrics import counter
+  from UCoreFrameworck.monitoring.metrics import counter
 
   @counter("my_counter", "Example counter")
   def my_function():
@@ -41,11 +41,11 @@ This guide covers monitoring, logging, metrics, and debugging tools in UCore, in
 
 ## Tracing
 
-- Tracing hooks available in `framework/monitoring/observability.py`.
+- Tracing hooks available in `UCoreFrameworck/monitoring/observability.py`.
 - Integrates with OpenTelemetry for distributed tracing (optional).
 - Example:
   ```python
-  from framework.monitoring.observability import trace_function
+  from UCoreFrameworck.monitoring.observability import trace_function
 
   @trace_function("my_operation")
   def do_work():
@@ -57,7 +57,7 @@ This guide covers monitoring, logging, metrics, and debugging tools in UCore, in
 ## Debugging Tools
 
 - Use tqdm for progress visualization in CLI and batch jobs.
-- Debug utilities in `framework/debug_utilities.py` for profiling, event inspection, and performance reports.
+- Debug utilities in `UCoreFrameworck/debug_utilities.py` for profiling, event inspection, and performance reports.
 - Example:
   ```python
   from tqdm import tqdm
@@ -79,5 +79,5 @@ This guide covers monitoring, logging, metrics, and debugging tools in UCore, in
 
 ## See Also
 
-- [UCore Framework Guide](ucore-framework-guide.md)
+- [UCore Framework Guide](ucore-UCoreFrameworck-guide.md)
 - [Project Structure Guide](project-structure-guide.md)

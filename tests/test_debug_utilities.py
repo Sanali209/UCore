@@ -8,7 +8,7 @@ from pathlib import Path
 from unittest.mock import Mock, patch, AsyncMock, MagicMock, call
 from datetime import datetime
 
-from framework.debug_utilities import (
+from UCoreFrameworck.debug_utilities import (
     DebugMetrics, ComponentDebugger, EventInspector, PerformanceProfiler,
     init_debug_utilities, get_debug_metrics, get_component_debugger,
     get_event_inspector, get_performance_profiler, save_all_debug_reports,
@@ -21,7 +21,7 @@ class TestDebugMetrics:
 
     def test_init(self):
         """Test DebugMetrics initialization."""
-        with patch('framework.debug_utilities.time.time', return_value=1000.0):
+        with patch('UCoreFrameworck.debug_utilities.time.time', return_value=1000.0):
             metrics = DebugMetrics()
 
             assert metrics.metrics == {}
@@ -29,7 +29,7 @@ class TestDebugMetrics:
 
     def test_record_operation_success(self):
         """Test recording successful operation."""
-        with patch('framework.debug_utilities.time.time', return_value=1000.0):
+        with patch('UCoreFrameworck.debug_utilities.time.time', return_value=1000.0):
             metrics = DebugMetrics()
 
             metrics.record_operation("test_op", 1.5, True)
@@ -68,7 +68,7 @@ class TestDebugMetrics:
 
     def test_get_report_empty(self):
         """Test get_report with no recorded operations."""
-        with patch('framework.debug_utilities.time.time', return_value=1010.0):
+        with patch('UCoreFrameworck.debug_utilities.time.time', return_value=1010.0):
             metrics = DebugMetrics()
             metrics.start_time = 1000.0
 
@@ -80,7 +80,7 @@ class TestDebugMetrics:
 
     def test_get_report_with_operations(self):
         """Test get_report with recorded operations."""
-        with patch('framework.debug_utilities.time.time', return_value=1010.0):
+        with patch('UCoreFrameworck.debug_utilities.time.time', return_value=1010.0):
             metrics = DebugMetrics()
             metrics.start_time = 1000.0
 
@@ -135,14 +135,14 @@ class TestComponentDebugger:
         assert "TestComponent" in debugger.traced_components
 
         # Test traced start
-        with patch('framework.debug_utilities.time.time') as mock_time:
+        with patch('UCoreFrameworck.debug_utilities.time.time') as mock_time:
             mock_time.side_effect = [1000.0, 1001.5]
             result = component.start()
 
             assert result == "start_result"
 
         # Test traced stop
-        with patch('framework.debug_utilities.time.time') as mock_time:
+        with patch('UCoreFrameworck.debug_utilities.time.time') as mock_time:
             mock_time.side_effect = [1000.0, 1002.0]
             result = component.stop()
 
@@ -170,7 +170,7 @@ class TestComponentDebugger:
         debugger.trace_component("TestComponent", component)
 
         # Test traced start with error
-        with patch('framework.debug_utilities.time.time') as mock_time:
+        with patch('UCoreFrameworck.debug_utilities.time.time') as mock_time:
             mock_time.side_effect = [1000.0, 1001.0]
             with pytest.raises(ValueError, match="Test error"):
                 component.start()
@@ -465,7 +465,7 @@ class TestPerformanceProfiler:
         def test_method(x, y):
             return x + y
 
-        with patch('framework.debug_utilities.time.time') as mock_time:
+        with patch('UCoreFrameworck.debug_utilities.time.time') as mock_time:
             mock_time.side_effect = [1000.0, 1001.5]
             result = test_method(5, 10)
 
@@ -490,7 +490,7 @@ class TestPerformanceProfiler:
         def failing_method():
             raise ValueError("Test error")
 
-        with patch('framework.debug_utilities.time.time') as mock_time:
+        with patch('UCoreFrameworck.debug_utilities.time.time') as mock_time:
             mock_time.side_effect = [1000.0, 1002.0]
             with pytest.raises(ValueError, match="Test error"):
                 failing_method()
@@ -509,7 +509,7 @@ class TestPerformanceProfiler:
             await asyncio.sleep(0.1)
             return x * 2
 
-        with patch('framework.debug_utilities.time.time') as mock_time:
+        with patch('UCoreFrameworck.debug_utilities.time.time') as mock_time:
             mock_time.side_effect = [1000.0, 1003.5]
             result = await async_method(5)
 
@@ -611,10 +611,10 @@ class TestGlobalDebugUtilities:
 
     def test_init_debug_utilities(self, capsys):
         """Test init_debug_utilities function."""
-        with patch('framework.debug_utilities.DebugMetrics'), \
-             patch('framework.debug_utilities.ComponentDebugger'), \
-             patch('framework.debug_utilities.EventInspector'), \
-             patch('framework.debug_utilities.PerformanceProfiler'):
+        with patch('UCoreFrameworck.debug_utilities.DebugMetrics'), \
+             patch('UCoreFrameworck.debug_utilities.ComponentDebugger'), \
+             patch('UCoreFrameworck.debug_utilities.EventInspector'), \
+             patch('UCoreFrameworck.debug_utilities.PerformanceProfiler'):
 
             init_debug_utilities()
 
@@ -623,35 +623,35 @@ class TestGlobalDebugUtilities:
 
     def test_get_debug_metrics(self):
         """Test get_debug_metrics function."""
-        with patch('framework.debug_utilities._debug_metrics', Mock()):
+        with patch('UCoreFrameworck.debug_utilities._debug_metrics', Mock()):
             result = get_debug_metrics()
             assert result is not None
 
     def test_get_component_debugger(self):
         """Test get_component_debugger function."""
-        with patch('framework.debug_utilities._component_debugger', Mock()):
+        with patch('UCoreFrameworck.debug_utilities._component_debugger', Mock()):
             result = get_component_debugger()
             assert result is not None
 
     def test_get_event_inspector(self):
         """Test get_event_inspector function."""
-        with patch('framework.debug_utilities._event_inspector', Mock()):
+        with patch('UCoreFrameworck.debug_utilities._event_inspector', Mock()):
             result = get_event_inspector()
             assert result is not None
 
     def test_get_performance_profiler(self):
         """Test get_performance_profiler function."""
-        with patch('framework.debug_utilities._performance_profiler', Mock()):
+        with patch('UCoreFrameworck.debug_utilities._performance_profiler', Mock()):
             result = get_performance_profiler()
             assert result is not None
 
     @pytest.mark.skip(reason="Mock for open does not support context manager protocol; test limitation.")
     def test_save_all_debug_reports(self, capsys):
         """Test save_all_debug_reports function."""
-        with patch('framework.debug_utilities._component_debugger') as mock_debugger, \
-             patch('framework.debug_utilities._performance_profiler') as mock_profiler, \
-             patch('framework.debug_utilities._debug_metrics') as mock_metrics, \
-             patch('framework.debug_utilities.Path.mkdir'), \
+        with patch('UCoreFrameworck.debug_utilities._component_debugger') as mock_debugger, \
+             patch('UCoreFrameworck.debug_utilities._performance_profiler') as mock_profiler, \
+             patch('UCoreFrameworck.debug_utilities._debug_metrics') as mock_metrics, \
+             patch('UCoreFrameworck.debug_utilities.Path.mkdir'), \
              tempfile.TemporaryDirectory() as tmp_dir:
 
             mock_debugger.save_report = Mock()
@@ -670,7 +670,7 @@ class TestGlobalDebugUtilities:
         mock_debugger = Mock()
         mock_component = Mock()
 
-        with patch('framework.debug_utilities._component_debugger', mock_debugger):
+        with patch('UCoreFrameworck.debug_utilities._component_debugger', mock_debugger):
             debug_component("TestComponent", mock_component)
 
             mock_debugger.trace_component.assert_called_once_with("TestComponent", mock_component)
@@ -680,7 +680,7 @@ class TestGlobalDebugUtilities:
         mock_inspector = Mock()
         mock_event_bus = Mock()
 
-        with patch('framework.debug_utilities._event_inspector', mock_inspector):
+        with patch('UCoreFrameworck.debug_utilities._event_inspector', mock_inspector):
             inspect_event_bus(mock_event_bus)
 
             mock_inspector.attach_to_event_bus.assert_called_once_with(mock_event_bus)
@@ -690,7 +690,7 @@ class TestGlobalDebugUtilities:
         """Test profile_method convenience function."""
         mock_profiler = Mock()
 
-        with patch('framework.debug_utilities._performance_profiler', mock_profiler):
+        with patch('UCoreFrameworck.debug_utilities._performance_profiler', mock_profiler):
             decorator = profile_method("TestComponent")
 
             mock_profiler.profile_method.assert_called_once_with("TestComponent", None)
@@ -700,26 +700,26 @@ class TestGlobalDebugUtilities:
         """Test profile_method with method name."""
         mock_profiler = Mock()
 
-        with patch('framework.debug_utilities._performance_profiler', mock_profiler):
+        with patch('UCoreFrameworck.debug_utilities._performance_profiler', mock_profiler):
             decorator = profile_method("TestComponent", "testMethod")
 
             mock_profiler.profile_method.assert_called_once_with("TestComponent", "testMethod")
 
     def test_debug_component_no_debugger(self):
         """Test debug_component when no debugger initialized."""
-        with patch('framework.debug_utilities._component_debugger', None):
+        with patch('UCoreFrameworck.debug_utilities._component_debugger', None):
             # Should not raise an error
             debug_component("TestComponent", Mock())
 
     def test_inspect_event_bus_no_inspector(self):
         """Test inspect_event_bus when no inspector initialized."""
-        with patch('framework.debug_utilities._event_inspector', None):
+        with patch('UCoreFrameworck.debug_utilities._event_inspector', None):
             # Should not raise an error
             inspect_event_bus(Mock())
 
     def test_profile_method_no_profiler(self):
         """Test profile_method when no profiler initialized."""
-        with patch('framework.debug_utilities._performance_profiler', None):
+        with patch('UCoreFrameworck.debug_utilities._performance_profiler', None):
             decorator = profile_method("TestComponent")
 
             # Should return identity decorator

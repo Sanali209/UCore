@@ -4,10 +4,10 @@ import json
 from unittest.mock import Mock, AsyncMock, patch, MagicMock, call
 from datetime import datetime
 
-from framework.messaging.redis_event_bridge import (
+from UCoreFrameworck.messaging.redis_event_bridge import (
     EventBusToRedisBridge, RedisToEventBusBridge, EventBusRedisBridge
 )
-from framework.messaging.events import AppStartedEvent, ComponentStartedEvent
+from UCoreFrameworck.messaging.events import AppStartedEvent, ComponentStartedEvent
 
 
 class TestEventBusToRedisBridge:
@@ -143,8 +143,8 @@ class TestRedisToEventBusBridge:
         mock_user_event = Mock()
         mock_user_event.__class__.__name__ = 'UserEvent'
 
-        with patch('framework.messaging.events.UserEvent', Mock(return_value=mock_user_event)) as user_event_patch:
-            with patch('framework.messaging.redis_event_bridge.json.loads', return_value={'type': 'test', 'data': 'value'}):
+        with patch('UCoreFrameworck.messaging.events.UserEvent', Mock(return_value=mock_user_event)) as user_event_patch:
+            with patch('UCoreFrameworck.messaging.redis_event_bridge.json.loads', return_value={'type': 'test', 'data': 'value'}):
                 def always_return_mock_eventbus(*args, **kwargs):
                     return mock_event_bus
                 with patch.object(self.bridge.app.container, "get", side_effect=always_return_mock_eventbus):
@@ -168,8 +168,8 @@ class TestRedisToEventBusBridge:
         mock_event_bus.publish = Mock()
 
         # Patch the correct import path or mock UserEvent directly
-        with patch('framework.messaging.events.UserEvent') as user_event_patch:
-            with patch('framework.messaging.redis_event_bridge.json.loads', side_effect=json.JSONDecodeError('Invalid JSON', '', 0)):
+        with patch('UCoreFrameworck.messaging.events.UserEvent') as user_event_patch:
+            with patch('UCoreFrameworck.messaging.redis_event_bridge.json.loads', side_effect=json.JSONDecodeError('Invalid JSON', '', 0)):
                 def always_return_mock_eventbus(*args, **kwargs):
                     return mock_event_bus
                 with patch.object(self.bridge.app.container, "get", side_effect=always_return_mock_eventbus):
@@ -194,7 +194,7 @@ class TestRedisToEventBusBridge:
 
         self.bridge.app.container.get.return_value = mock_event_bus
 
-        with patch('framework.messaging.events.UserEvent'):
+        with patch('UCoreFrameworck.messaging.events.UserEvent'):
             listener = self.bridge.redis_listeners[redis_channel]
 
             await listener("test message")
@@ -310,7 +310,7 @@ class TestRedisAdapterEventBridgeIntegration:
 
     def setup_method(self):
         """Setup method for tests."""
-        from framework.messaging.redis_adapter import RedisAdapter
+        from UCoreFrameworck.messaging.redis_adapter import RedisAdapter
 
         self.app = Mock()
         self.app.container.get.side_effect = Exception("Config not found")
@@ -335,7 +335,7 @@ class TestRedisAdapterEventBridgeIntegration:
 
     def test_bridge_settings_override(self):
         """Test bridge settings override from config."""
-        from framework.messaging.redis_adapter import RedisAdapter
+        from UCoreFrameworck.messaging.redis_adapter import RedisAdapter
         # Create adapter with config that has bridge settings
         app_with_config = Mock()
         mock_config = Mock()

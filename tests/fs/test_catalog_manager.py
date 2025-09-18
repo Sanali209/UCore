@@ -1,7 +1,7 @@
 import pytest
 import asyncio
-from framework.fs.components.catalog import CatalogManager
-from framework.fs.models import CatalogRecord
+from UCoreFrameworck.fs.components.catalog import CatalogManager
+from UCoreFrameworck.fs.models import CatalogRecord
 
 @pytest.mark.asyncio
 async def test_create_and_find_catalog():

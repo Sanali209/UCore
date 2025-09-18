@@ -1,8 +1,8 @@
 import pytest
 import asyncio
-from framework.fs.resource import FilesDBResource, FileAddedEvent
-from framework.fs.models import FileRecord
-from framework.messaging.event_bus import EventBus
+from UCoreFrameworck.fs.resource import FilesDBResource, FileAddedEvent
+from UCoreFrameworck.fs.models import FileRecord
+from UCoreFrameworck.messaging.event_bus import EventBus
 
 class DummyResourceManager:
     def __init__(self):

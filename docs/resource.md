@@ -20,8 +20,8 @@ The resource domain provides unified orchestration and management of resources i
 ## Usage Example
 
 ```python
-from framework.resource.manager import ResourceManager
-from framework.resource.resource import Resource
+from UCoreFrameworck.resource.manager import ResourceManager
+from UCoreFrameworck.resource.resource import Resource
 
 class MyResource(Resource):
     def connect(self):
@@ -36,7 +36,7 @@ manager.register_resource(MyResource())
 ## Pooling Example
 
 ```python
-from framework.resource.pool import PooledResource
+from UCoreFrameworck.resource.pool import PooledResource
 
 class MyPool(PooledResource):
     ...
@@ -61,4 +61,4 @@ class MyPool(PooledResource):
 ## See Also
 
 - [Project Structure Guide](project-structure-guide.md)
-- [UCore Framework Guide](ucore-framework-guide.md)
+- [UCore Framework Guide](ucore-UCoreFrameworck-guide.md)

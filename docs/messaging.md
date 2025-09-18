@@ -18,7 +18,7 @@ The messaging domain provides event-driven communication within UCore, supportin
 ## Usage Example
 
 ```python
-from framework.messaging.event_bus import EventBus, Event
+from UCoreFrameworck.messaging.event_bus import EventBus, Event
 
 class MyEvent(Event):
     def __init__(self, data):
@@ -37,7 +37,7 @@ bus.publish(MyEvent("Hello"))
 ## Distributed Messaging Example
 
 ```python
-from framework.messaging.redis_event_bridge import RedisEventBridge
+from UCoreFrameworck.messaging.redis_event_bridge import RedisEventBridge
 
 bridge = RedisEventBridge(app, redis_url="redis://localhost:6379")
 bridge.start()
@@ -62,4 +62,4 @@ bridge.start()
 ## See Also
 
 - [Project Structure Guide](project-structure-guide.md)
-- [UCore Framework Guide](ucore-framework-guide.md)
+- [UCore Framework Guide](ucore-UCoreFrameworck-guide.md)

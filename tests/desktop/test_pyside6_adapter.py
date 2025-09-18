@@ -8,7 +8,7 @@ import sys
 import asyncio
 import os
 from unittest.mock import Mock, patch, AsyncMock
-from framework.desktop.ui.pyside6_adapter import PySide6Adapter
+from UCoreFrameworck.desktop.ui.pyside6_adapter import PySide6Adapter
 
 
 class TestPySide6AdapterInitialization:
@@ -46,7 +46,7 @@ class TestPySide6AdapterInitialization:
 class TestQApplicationManagement:
     """Test QApplication creation and management."""
 
-    @patch('framework.desktop.ui.pyside6_adapter.QApplication')
+    @patch('UCoreFrameworck.desktop.ui.pyside6_adapter.QApplication')
     @patch('sys.argv', ['test_app'])
     def test_qapplication_creation_success(self, mock_qapp):
         """Test successful QApplication creation."""
@@ -58,7 +58,7 @@ class TestQApplicationManagement:
         adapter = PySide6Adapter(app)
 
         # Patch QApplication.instance to return None so QApplication(sys.argv) is called
-        with patch('framework.desktop.ui.pyside6_adapter.QApplication.instance', return_value=None):
+        with patch('UCoreFrameworck.desktop.ui.pyside6_adapter.QApplication.instance', return_value=None):
             with patch('qasync.QEventLoop') as mock_qasync:
                 mock_qasync.return_value = Mock()
 
@@ -70,7 +70,7 @@ class TestQApplicationManagement:
                 # Verify qasync event loop was created
                 mock_qasync.assert_called_once()
 
-    @patch('framework.desktop.ui.pyside6_adapter.QApplication')
+    @patch('UCoreFrameworck.desktop.ui.pyside6_adapter.QApplication')
     @patch('sys.argv', ['test_app'])
     def test_qapplication_creation_failure(self, mock_qapp):
         """Test QApplication creation failure handling."""
@@ -83,14 +83,14 @@ class TestQApplicationManagement:
         adapter = PySide6Adapter(app)
 
         # Patch QApplication.instance to return None so QApplication(sys.argv) is called
-        with patch('framework.desktop.ui.pyside6_adapter.QApplication.instance', return_value=None):
+        with patch('UCoreFrameworck.desktop.ui.pyside6_adapter.QApplication.instance', return_value=None):
             # Should handle failure gracefully
             with pytest.raises(SystemExit):  # Qt app failure usually exits
                 adapter.get_event_loop()
 
         app.logger.error.assert_called()
 
-    @patch('framework.desktop.ui.pyside6_adapter.QApplication')
+    @patch('UCoreFrameworck.desktop.ui.pyside6_adapter.QApplication')
     @patch('sys.argv', ['test_app'])
     def test_qapplication_existing_instance(self, mock_qapp):
         """Test using existing QApplication instance."""
@@ -231,7 +231,7 @@ class TestWindowManagement:
 class TestEventLoopManagement:
     """Test event loop creation and management."""
 
-    @patch('framework.desktop.ui.pyside6_adapter.QApplication')
+    @patch('UCoreFrameworck.desktop.ui.pyside6_adapter.QApplication')
     @patch('sys.argv', ['test_app'])
     def test_event_loop_creation(self, mock_qapp):
         """Test event loop creation with QEventLoop."""
@@ -252,7 +252,7 @@ class TestEventLoopManagement:
             mock_qasync.assert_called_once()
             assert event_loop == mock_loop
 
-    @patch('framework.desktop.ui.pyside6_adapter.QApplication')
+    @patch('UCoreFrameworck.desktop.ui.pyside6_adapter.QApplication')
     @patch('sys.argv', ['test_app'])
     def test_event_loop_fallback(self, mock_qapp):
         """Test fallback to asyncio event loop."""
@@ -274,7 +274,7 @@ class TestEventLoopManagement:
                 # Should fall back to asyncio loop
                 assert event_loop == mock_loop
 
-    @patch('framework.desktop.ui.pyside6_adapter.QApplication')
+    @patch('UCoreFrameworck.desktop.ui.pyside6_adapter.QApplication')
     @patch('sys.argv', ['test_app'])
     def test_event_loop_reuse(self, mock_qapp):
         """Test event loop reuse."""
@@ -302,7 +302,7 @@ class TestEventLoopManagement:
 class TestShutdownHandling:
     """Test shutdown signal handling."""
 
-    @patch('framework.desktop.ui.pyside6_adapter.QApplication')
+    @patch('UCoreFrameworck.desktop.ui.pyside6_adapter.QApplication')
     @patch('sys.argv', ['test_app'])
     def test_shutdown_handler_connection(self, mock_qapp):
         """Test shutdown handler connection."""
@@ -324,7 +324,7 @@ class TestShutdownHandling:
         # Verify Qt signal connection (would happen if qt_app existed)
         # mock_qt_app.aboutToQuit.connect.assert_called_once_with(shutdown_handler)
 
-    @patch('framework.desktop.ui.pyside6_adapter.QApplication')
+    @patch('UCoreFrameworck.desktop.ui.pyside6_adapter.QApplication')
     @patch('sys.argv', ['test_app'])
     def test_component_lifecycle_start(self, mock_qapp):
         """Test component start lifecycle."""
@@ -344,7 +344,7 @@ class TestShutdownHandling:
             # Should log startup message
             app.logger.info.assert_called()
 
-    @patch('framework.desktop.ui.pyside6_adapter.QApplication')
+    @patch('UCoreFrameworck.desktop.ui.pyside6_adapter.QApplication')
     @patch('sys.argv', ['test_app'])
     def test_component_lifecycle_stop(self, mock_qapp):
         """Test component stop lifecycle."""
@@ -378,7 +378,7 @@ class TestQtValidation:
         # Qt not initialized yet
         assert not adapter.ensure_qt_ready()
 
-    @patch('framework.desktop.ui.pyside6_adapter.QApplication')
+    @patch('UCoreFrameworck.desktop.ui.pyside6_adapter.QApplication')
     @patch('sys.argv', ['test_app'])
     def test_qt_ready_check_true(self, mock_qapp):
         """Test Qt readiness check when ready."""
@@ -401,12 +401,12 @@ class TestQtValidation:
 
 
 class TestIntegrationWithUCore:
-    """Test integration with UCore framework."""
+    """Test integration with UCore UCoreFrameworck."""
 
     @pytest.mark.asyncio
     async def test_adapter_with_ucore_app(self):
         """Test adapter integration with UCore App."""
-        from framework.core.app import App
+        from UCoreFrameworck.core.app import App
 
         app = App("PySide6TestApp")
 
@@ -429,8 +429,8 @@ class TestIntegrationWithUCore:
 
     def test_container_integration(self):
         """Test container integration for dependency injection."""
-        from framework.core.app import App
-        from framework.core.di import Container
+        from UCoreFrameworck.core.app import App
+        from UCoreFrameworck.core.di import Container
 
         app = App("IntegrationTest")
 
@@ -524,7 +524,7 @@ class TestErrorConditions:
 class TestQApplicationStates:
     """Test different QApplication states."""
 
-    @patch('framework.desktop.ui.pyside6_adapter.QApplication')
+    @patch('UCoreFrameworck.desktop.ui.pyside6_adapter.QApplication')
     @patch('sys.argv', ['test_app'])
     def test_qapplication_state_changes(self, mock_qapp):
         """Test QApplication state management."""
@@ -539,7 +539,7 @@ class TestQApplicationStates:
         # Check initial state
         assert adapter.qt_app is None
 
-        with patch('framework.desktop.ui.pyside6_adapter.QApplication.instance', return_value=None):
+        with patch('UCoreFrameworck.desktop.ui.pyside6_adapter.QApplication.instance', return_value=None):
             with patch('qasync.QEventLoop') as mock_qasync:
                 mock_qasync.return_value = Mock()
 
@@ -554,7 +554,7 @@ class TestQApplicationStates:
 
                 mock_qapp.assert_called_once()  # Only created once
 
-    @patch('framework.desktop.ui.pyside6_adapter.QApplication')
+    @patch('UCoreFrameworck.desktop.ui.pyside6_adapter.QApplication')
     @patch('sys.argv', ['test_app'])
     def test_qt_app_lifecycle_events(self, mock_qapp):
         """Test Qt application lifecycle event handling."""
@@ -590,7 +590,7 @@ class TestAsyncIntegration:
     """Test async integration patterns."""
 
     @pytest.mark.asyncio
-    @patch('framework.desktop.ui.pyside6_adapter.QApplication')
+    @patch('UCoreFrameworck.desktop.ui.pyside6_adapter.QApplication')
     @patch('sys.argv', ['test_app'])
     async def test_async_event_loop_integration(self, mock_qapp):
         """Test async event loop integration."""
@@ -618,7 +618,7 @@ class TestAsyncIntegration:
 class TestPerformanceAndMemory:
     """Test performance and memory management."""
 
-    @patch('framework.desktop.ui.pyside6_adapter.QApplication')
+    @patch('UCoreFrameworck.desktop.ui.pyside6_adapter.QApplication')
     @patch('sys.argv', ['test_app'])
     def test_memory_management(self, mock_qapp):
         """Test proper memory management."""
@@ -644,7 +644,7 @@ class TestPerformanceAndMemory:
         # All windows should be retained
         assert len(adapter.windows) == 10
 
-    @patch('framework.desktop.ui.pyside6_adapter.QApplication')
+    @patch('UCoreFrameworck.desktop.ui.pyside6_adapter.QApplication')
     @patch('sys.argv', ['test_app'])
     def test_initialization_performance(self, mock_qapp):
         """Test initialization performance."""

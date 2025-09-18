@@ -2,10 +2,10 @@ import pytest
 import asyncio
 from unittest.mock import Mock, patch, AsyncMock
 import time
-from framework.web.http import HttpServer
-from framework.core.app import App
-from framework.messaging.event_bus import EventBus
-from framework.messaging.events import (
+from UCoreFrameworck.web.http import HttpServer
+from UCoreFrameworck.core.app import App
+from UCoreFrameworck.messaging.event_bus import EventBus
+from UCoreFrameworck.messaging.events import (
     HttpServerStartedEvent, HTTPRequestEvent, HTTPResponseEvent, HTTPErrorEvent
 )
 from aiohttp import web
@@ -452,7 +452,7 @@ class TestDependencyInjection:
 class TestMetricsIntegration:
     """Test HTTP metrics middleware integration."""
 
-    @patch('framework.monitoring.metrics.HTTPMetricsAdapter')
+    @patch('UCoreFrameworck.monitoring.metrics.HTTPMetricsAdapter')
     def test_metrics_middleware_integration(self, mock_metrics_adapter_class):
         """Test automatic HTTP metrics middleware addition."""
         mock_metrics_instance = Mock()
@@ -460,7 +460,7 @@ class TestMetricsIntegration:
         mock_metrics_adapter_class.__instance__ = mock_metrics_instance
 
         # Patch isinstance to always return True for HTTPMetricsAdapter
-        import framework.monitoring.metrics as metrics_mod
+        import UCoreFrameworck.monitoring.metrics as metrics_mod
         orig_isinstance = isinstance
 
         def fake_isinstance(obj, typ):

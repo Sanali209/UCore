@@ -6,8 +6,8 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../.
 import pytest
 import asyncio
 from unittest.mock import Mock, AsyncMock
-from framework.messaging.event_bus import EventBus
-from framework.messaging.events import Event, ComponentStartedEvent
+from UCoreFrameworck.messaging.event_bus import EventBus
+from UCoreFrameworck.messaging.events import Event, ComponentStartedEvent
 
 
 @pytest.fixture

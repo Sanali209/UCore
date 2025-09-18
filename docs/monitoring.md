@@ -21,7 +21,7 @@ The monitoring domain provides observability features for UCore, including loggi
 from loguru import logger
 logger.info("Service started")
 
-from framework.monitoring.metrics import counter
+from UCoreFrameworck.monitoring.metrics import counter
 
 @counter("my_counter", "Example counter")
 def my_function():
@@ -40,7 +40,7 @@ def my_function():
 ## Tracing
 
 ```python
-from framework.monitoring.observability import trace_function
+from UCoreFrameworck.monitoring.observability import trace_function
 
 @trace_function("my_operation")
 def do_work():

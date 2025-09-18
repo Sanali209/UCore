@@ -1,8 +1,8 @@
 import pytest
-from framework.processing.background import TaskQueueAdapter
-from framework.processing.cli_worker import WorkerManager
-from framework.processing.cpu_tasks import ConcurrentFuturesAdapter
-from framework.core.app import App
+from UCoreFrameworck.processing.background import TaskQueueAdapter
+from UCoreFrameworck.processing.cli_worker import WorkerManager
+from UCoreFrameworck.processing.cpu_tasks import ConcurrentFuturesAdapter
+from UCoreFrameworck.core.app import App
 
 class DummyApp(App):
     def __init__(self):

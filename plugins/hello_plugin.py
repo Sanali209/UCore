@@ -1,6 +1,6 @@
 # plugins/hello_plugin.py
-from framework.plugins import Plugin
-from framework.component import Component
+from UCoreFrameworck.plugins import Plugin
+from UCoreFrameworck.component import Component
 
 class HelloComponent(Component):
     def __init__(self, message="Hello from the plugin!"):

@@ -8,7 +8,7 @@ import uuid
 from datetime import datetime
 from unittest.mock import Mock, patch
 
-from framework.messaging.events import (
+from UCoreFrameworck.messaging.events import (
     Event, ComponentStartedEvent, ComponentStoppedEvent, ComponentErrorEvent,
     HttpServerStartedEvent, HTTPRequestEvent, HTTPResponseEvent, HTTPErrorEvent,
     DBConnectionEvent, DBQueryEvent, DBTransactionEvent, DBPoolEvent,
@@ -49,7 +49,7 @@ class TestEventBase:
         assert event.source == "test_source"
         assert event.data == custom_data
 
-    @patch('framework.messaging.events.inspect')
+    @patch('UCoreFrameworck.messaging.events.inspect')
     def test_source_detection_success(self, mock_inspect):
         """Test successful source detection from call stack."""
         # Mock inspect to simulate finding a module
@@ -69,7 +69,7 @@ class TestEventBase:
 
         assert source == "module"
 
-    @patch('framework.messaging.events.inspect')
+    @patch('UCoreFrameworck.messaging.events.inspect')
     def test_source_detection_failure(self, mock_inspect):
         """Test source detection failure handling."""
         mock_inspect.currentframe.side_effect = Exception("No frames")
@@ -617,7 +617,7 @@ class TestEventErrorConditions:
 
     def test_exception_in_source_detection(self):
         """Test exception handling in source detection."""
-        with patch('framework.messaging.events.inspect.currentframe', side_effect=Exception("Test error")):
+        with patch('UCoreFrameworck.messaging.events.inspect.currentframe', side_effect=Exception("Test error")):
             event = Event()
             source = event._detect_source()
             assert source == "unknown"

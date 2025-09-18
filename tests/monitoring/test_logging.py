@@ -6,7 +6,7 @@ from unittest.mock import Mock, patch, MagicMock, call
 from io import StringIO
 from datetime import datetime
 
-from framework.monitoring.logging import JsonFormatter, Logging
+from UCoreFrameworck.monitoring.logging import JsonFormatter, Logging
 
 
 class TestJsonFormatter:

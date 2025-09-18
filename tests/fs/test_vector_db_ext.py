@@ -1,5 +1,5 @@
 import pytest
-from framework.fs.vector_db_ext import EmbeddingFusion
+from UCoreFrameworck.fs.vector_db_ext import EmbeddingFusion
 
 def test_embedding_fusion_weighted_average_stub():
     fusion = EmbeddingFusion(target_dim=4)

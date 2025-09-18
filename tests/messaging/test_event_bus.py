@@ -7,8 +7,8 @@ import pytest
 import asyncio
 from unittest.mock import Mock, patch
 import logging
-from framework.messaging.event_bus import EventBus, EventHandlerInfo
-from framework.messaging.events import Event, ComponentStartedEvent, AppStartedEvent
+from UCoreFrameworck.messaging.event_bus import EventBus, EventHandlerInfo
+from UCoreFrameworck.messaging.events import Event, ComponentStartedEvent, AppStartedEvent
 from tests.messaging.conftest import TestEvent, ErrorEventHandler, FilterEventHandler, MockMiddleware
 
 
@@ -391,7 +391,7 @@ class TestEventPublisherHelpers:
 
         # Create a simple user event instead of using publish_component_event
         # which may have implementation issues
-        from framework.messaging.events import UserEvent
+        from UCoreFrameworck.messaging.events import UserEvent
 
         component_event = UserEvent(
             event_type="connection_established",

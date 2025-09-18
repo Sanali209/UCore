@@ -2,13 +2,12 @@
 
 ## Purpose
 
-The data domain provides persistence and caching for UCore, including SQLAlchemy integration, disk cache, and a MongoDB Object-Document Mapper (ODM).
+The data domain provides persistence and caching for UCore, including disk cache and a MongoDB Object-Document Mapper (ODM).
 
 ---
 
 ## Main Classes & Components
 
-- `SQLAlchemyAdapter`: Async database adapter for SQL databases.
 - `DiskCacheAdapter`: High-performance disk-based cache.
 - `MongoDBAdapter`: MongoDB integration and model registration.
 - `BaseMongoRecord`, `Field`, `ReferenceField`: MongoDB ODM model base and fields.
@@ -19,10 +18,8 @@ The data domain provides persistence and caching for UCore, including SQLAlchemy
 ## Usage Example
 
 ```python
-from framework.data.db import SQLAlchemyAdapter
-from framework.data.disk_cache import DiskCacheAdapter
+from UCoreFrameworck.data.disk_cache import DiskCacheAdapter
 
-db_adapter = SQLAlchemyAdapter(app)
 cache = DiskCacheAdapter(app)
 ```
 
@@ -31,7 +28,7 @@ cache = DiskCacheAdapter(app)
 ## MongoDB ODM Example
 
 ```python
-from framework.data.mongo_orm import BaseMongoRecord, Field
+from UCoreFrameworck.data.mongo_orm import BaseMongoRecord, Field
 
 class User(BaseMongoRecord):
     collection_name = "users"

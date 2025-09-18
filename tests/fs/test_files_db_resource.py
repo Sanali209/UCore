@@ -1,8 +1,8 @@
 import pytest
 import asyncio
-from framework.fs.resource import FilesDBResource
-from framework.fs.models import FileRecord
-from framework.fs.storage_adapter import MongoFilesDBAdapter
+from UCoreFrameworck.fs.resource import FilesDBResource
+from UCoreFrameworck.fs.models import FileRecord
+from UCoreFrameworck.fs.storage_adapter import MongoFilesDBAdapter
 
 class DummyEventBus:
     async def publish(self, *args, **kwargs):

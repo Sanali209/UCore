@@ -12,8 +12,8 @@ from unittest.mock import Mock, patch
 import types
 import importlib.util
 import sys
-from framework.core.plugins import PluginManager, Plugin
-from framework.core.app import App
+from UCoreFrameworck.core.plugins import PluginManager, Plugin
+from UCoreFrameworck.core.app import App
 
 
 class TestPluginManagement:
@@ -103,7 +103,7 @@ class TestPluginLoading:
         # Create a temporary plugin file
         with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
             f.write("""
-from framework.core.plugins import Plugin
+from UCoreFrameworck.core.plugins import Plugin
 
 class TestPlugin(Plugin):
     def register(self, app):
@@ -391,7 +391,7 @@ class TestPluginDirectoryIntegration:
                 plugin_file = os.path.join(temp_dir, f'plugin_{i}.py')
                 with open(plugin_file, 'w') as f:
                     f.write(f"""
-from framework.core.plugins import Plugin
+from UCoreFrameworck.core.plugins import Plugin
 
 class Plugin{i}(Plugin):
     def register(self, app):
@@ -597,7 +597,7 @@ class TestPluginManagerStats:
                 plugin_file = os.path.join(temp_dir, f'plugin_{i:02d}.py')
                 with open(plugin_file, 'w') as f:
                     f.write(f"""
-from framework.core.plugins import Plugin
+from UCoreFrameworck.core.plugins import Plugin
 
 class Plugin{i}(Plugin):
     def register(self, app):

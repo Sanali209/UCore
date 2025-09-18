@@ -7,12 +7,12 @@ import pytest
 from loguru import logger
 from tqdm import tqdm
 
-from framework.core.app import App
-from framework.core.component import Component
-from framework.data.mongo_adapter import MongoDBAdapter
-from framework.data.disk_cache import DiskCacheAdapter
-from framework.messaging.event_bus import EventBus, Event
-from framework.core.config import Config
+from UCoreFrameworck.core.app import App
+from UCoreFrameworck.core.component import Component
+from UCoreFrameworck.data.mongo_adapter import MongoDBAdapter
+from UCoreFrameworck.data.disk_cache import DiskCacheAdapter
+from UCoreFrameworck.messaging.event_bus import EventBus, Event
+from UCoreFrameworck.core.config import Config
 
 class TestIntegrationCoreDataMessaging:
     @pytest.fixture(scope="class")

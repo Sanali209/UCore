@@ -2626,3 +2626,28 @@
 2025-09-18 01:34:01.720 | INFO     | framework.resource.manager:_shutdown_resource_safe:260 - Shutdown resource good_resource successfully
 2025-09-18 01:34:01.720 | INFO     | framework.resource.manager:stop_all_resources:249 - All resources stopped
 2025-09-18 01:34:01.722 | INFO     | framework.resource.manager:__init__:49 - ResourceManager created
+2025-09-18 10:42:26.161 | INFO     | __main__:main_async:35 - Resource demo started
+2025-09-18 10:42:26.161 | INFO     | framework.resource.manager:__init__:51 - ResourceManager created
+2025-09-18 10:42:26.162 | INFO     | framework.resource.resource:__init__:80 - Resource demo_resource created with type demo_type
+2025-09-18 10:42:26.163 | INFO     | framework.resource.manager:register_resource:81 - Registered resource demo_resource of type demo_type
+2025-09-18 10:42:26.164 | INFO     | __main__:main_async:39 - Registered resource: demo_resource
+2025-09-18 10:42:26.164 | INFO     | framework.resource.resource:initialize:116 - Initializing resource demo_resource
+2025-09-18 10:42:26.165 | INFO     | __main__:_initialize:14 - MockResource demo_resource: _initialize called
+2025-09-18 10:42:26.273 | INFO     | framework.resource.resource:initialize:122 - Resource demo_resource initialized successfully
+2025-09-18 10:42:26.273 | SUCCESS  | __main__:main_async:42 - Resource demo_resource initialized, state: ResourceState.READY
+2025-09-18 10:42:26.274 | INFO     | framework.resource.resource:connect:143 - Connecting resource demo_resource
+2025-09-18 10:42:26.274 | INFO     | __main__:_connect:18 - MockResource demo_resource: _connect called
+2025-09-18 10:42:26.381 | INFO     | framework.resource.resource:connect:150 - Resource demo_resource connected successfully
+2025-09-18 10:42:26.382 | SUCCESS  | __main__:main_async:45 - Resource demo_resource connected, state: ResourceState.CONNECTED
+2025-09-18 10:42:26.383 | INFO     | __main__:_health_check:26 - MockResource demo_resource: _health_check called
+2025-09-18 10:42:26.445 | DEBUG    | framework.resource.resource:health_check:199 - Health check for demo_resource: healthy
+2025-09-18 10:42:26.446 | SUCCESS  | __main__:main_async:48 - Resource demo_resource health: ResourceHealth.HEALTHY
+2025-09-18 10:42:26.446 | INFO     | framework.resource.resource:disconnect:172 - Disconnecting resource demo_resource
+2025-09-18 10:42:26.447 | INFO     | __main__:_disconnect:22 - MockResource demo_resource: _disconnect called
+2025-09-18 10:42:26.553 | INFO     | framework.resource.resource:disconnect:179 - Resource demo_resource disconnected successfully
+2025-09-18 10:42:26.553 | SUCCESS  | __main__:main_async:51 - Resource demo_resource disconnected, state: ResourceState.DISCONNECTED
+2025-09-18 10:42:26.554 | INFO     | framework.resource.resource:cleanup:213 - Cleaning up resource demo_resource
+2025-09-18 10:42:26.555 | INFO     | __main__:_cleanup:31 - MockResource demo_resource: _cleanup called
+2025-09-18 10:42:26.615 | INFO     | framework.resource.resource:cleanup:219 - Resource demo_resource cleaned up successfully
+2025-09-18 10:42:26.615 | SUCCESS  | __main__:main_async:54 - Resource demo_resource cleaned up, state: ResourceState.DESTROYED
+2025-09-18 10:42:26.616 | SUCCESS  | __main__:main_async:56 - Resource demo completed

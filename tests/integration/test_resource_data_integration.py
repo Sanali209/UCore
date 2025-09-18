@@ -7,9 +7,9 @@ import pytest
 from loguru import logger
 from tqdm import tqdm
 
-from framework.resource.manager import ResourceManager
-from framework.data.mongo_adapter import MongoDBAdapter
-from framework.data.disk_cache import DiskCacheAdapter
+from UCoreFrameworck.resource.manager import ResourceManager
+from UCoreFrameworck.data.mongo_adapter import MongoDBAdapter
+from UCoreFrameworck.data.disk_cache import DiskCacheAdapter
 
 class DummyResource:
     def __init__(self, name, resource_type="test"):

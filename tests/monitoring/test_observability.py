@@ -1,6 +1,6 @@
 import pytest
-from framework.monitoring.observability import Observability, TracingProvider, MetricsMiddleware
-from framework.core.app import App
+from UCoreFrameworck.monitoring.observability import Observability, TracingProvider, MetricsMiddleware
+from UCoreFrameworck.core.app import App
 
 class DummyApp(App):
     def __init__(self):

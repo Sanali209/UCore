@@ -4,7 +4,7 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
 
 """
-Integration test fixtures and configuration for UCore framework.
+Integration test fixtures and configuration for UCore UCoreFrameworck.
 
 This module provides real system components for comprehensive integration testing
 rather than mocked components used in unit tests.
@@ -17,10 +17,10 @@ import tempfile
 from pathlib import Path
 from typing import Dict, Any, Iterator, AsyncGenerator
 
-from framework.core.app import App
-from framework.core.config import Config
-from framework.core.di import Container
-from framework.messaging.events import Event, ComponentStartedEvent, ComponentStoppedEvent
+from UCoreFrameworck.core.app import App
+from UCoreFrameworck.core.config import Config
+from UCoreFrameworck.core.di import Container
+from UCoreFrameworck.messaging.events import Event, ComponentStartedEvent, ComponentStoppedEvent
 
 
 class TestApp(App):
@@ -36,8 +36,8 @@ class TestApp(App):
         self.test_data = {}
         # Register and start database adapters for integration tests
         try:
-            from framework.data.db import SQLAlchemyAdapter
-            from framework.data.mongo_adapter import MongoDBAdapter
+            from UCoreFrameworck.data.db import SQLAlchemyAdapter
+            from UCoreFrameworck.data.mongo_adapter import MongoDBAdapter
             self.container.register(SQLAlchemyAdapter)
             self.container.register(MongoDBAdapter)
             # Instantiate and start adapters so they appear in _components

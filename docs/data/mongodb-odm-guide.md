@@ -15,7 +15,7 @@ This guide explains the MongoDB Object-Document Mapper (ODM) in UCore, including
 ## Defining Models
 
 ```python
-from framework.data.mongo_orm import BaseMongoRecord, Field, ReferenceField
+from UCoreFrameworck.data.mongo_orm import BaseMongoRecord, Field, ReferenceField
 from pymongo import IndexModel, ASCENDING
 
 class Company(BaseMongoRecord):
@@ -38,7 +38,7 @@ class User(BaseMongoRecord):
 ## Registering Models
 
 ```python
-from framework.data.mongo_adapter import MongoDBAdapter
+from UCoreFrameworck.data.mongo_adapter import MongoDBAdapter
 
 mongo_adapter = MongoDBAdapter(app)
 mongo_adapter.register_models([User, Company])
@@ -93,5 +93,5 @@ fetched_company = await user.company.fetch()
 
 ## See Also
 
-- [UCore Framework Guide](../ucore-framework-guide.md)
+- [UCore Framework Guide](../ucore-UCoreFrameworck-guide.md)
 - [Project Structure Guide](../project-structure-guide.md)

@@ -1,6 +1,6 @@
 import pytest
 import asyncio
-from framework.fs.indexers import Indexer, FileTypeStrategy, register_strategy, get_strategy_by_extension
+from UCoreFrameworck.fs.indexers import Indexer, FileTypeStrategy, register_strategy, get_strategy_by_extension
 
 class DummyIndexer(Indexer):
     async def process(self, file_record, file_path):

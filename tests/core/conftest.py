@@ -4,10 +4,10 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../.
 
 import pytest
 from unittest.mock import Mock
-from framework.core.app import App
-from framework.core.component import Component
-from framework.core.config import Config
-from framework.monitoring.logging import Logging
+from UCoreFrameworck.core.app import App
+from UCoreFrameworck.core.component import Component
+from UCoreFrameworck.core.config import Config
+from UCoreFrameworck.monitoring.logging import Logging
 
 
 @pytest.fixture

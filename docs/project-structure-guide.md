@@ -6,8 +6,8 @@ This guide explains the directory and module structure of UCore, and how to navi
 
 ## Top-Level Structure
 
-- `framework/` — Main framework code, organized by domain (core, data, desktop, messaging, monitoring, processing, resource, web)
-- `tests/` — Unit and integration tests, mirroring the framework structure
+- `UCoreFrameworck/` — Main UCoreFrameworck code, organized by domain (core, data, desktop, messaging, monitoring, processing, resource, web)
+- `tests/` — Unit and integration tests, mirroring the UCoreFrameworck structure
 - `docs/` — Documentation and guides
 - `examples/` — Example projects and usage demos
 - `plugins/` — Example plugins
@@ -16,37 +16,37 @@ This guide explains the directory and module structure of UCore, and how to navi
 
 ## Key Directories
 
-### framework/core
+### UCoreFrameworck/core
 - App orchestration, component system, DI, config, plugins, settings
 
-### framework/data
+### UCoreFrameworck/data
 - SQLAlchemy DB, disk cache, MongoDB ODM, data view models
 
-### framework/desktop
+### UCoreFrameworck/desktop
 - UI adapters for Flet (web) and PySide6 (desktop/Qt)
 
-### framework/messaging
+### UCoreFrameworck/messaging
 - EventBus, event types, Redis adapter, distributed event bridge
 
-### framework/monitoring
+### UCoreFrameworck/monitoring
 - Logging (loguru), Prometheus metrics, observability, health checks, tracing
 
-### framework/processing
+### UCoreFrameworck/processing
 - Task queue, CLI, worker management, CPU task adapters
 
-### framework/resource
+### UCoreFrameworck/resource
 - ResourceManager, resource types, pooling, health monitoring
 
-### framework/web
+### UCoreFrameworck/web
 - HttpServer, routing, middleware, async endpoints
 
 ---
 
 ## Extending the Project
 
-- Add new domains as subdirectories in `framework/`
+- Add new domains as subdirectories in `UCoreFrameworck/`
 - Implement new components by subclassing `Component`
-- Register plugins in `framework/core/plugins.py`
+- Register plugins in `UCoreFrameworck/core/plugins.py`
 - Add tests in the corresponding `tests/` subdirectory
 
 ---
@@ -54,7 +54,7 @@ This guide explains the directory and module structure of UCore, and how to navi
 ## Example: Adding a New Component
 
 ```python
-from framework.core.component import Component
+from UCoreFrameworck.core.component import Component
 
 class MyComponent(Component):
     def start(self):
@@ -65,5 +65,5 @@ class MyComponent(Component):
 
 ## See Also
 
-- [UCore Framework Guide](ucore-framework-guide.md)
+- [UCore Framework Guide](ucore-UCoreFrameworck-guide.md)
 - [Domain-Driven Architecture](domain-driven-architecture.md)

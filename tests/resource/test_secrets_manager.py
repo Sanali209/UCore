@@ -1,6 +1,6 @@
 import os
 import pytest
-from framework.resource.secrets import EnvVarSecretsManager
+from UCoreFrameworck.resource.secrets import EnvVarSecretsManager
 
 def test_env_var_secrets_manager_set_get_rotate_audit(monkeypatch):
     manager = EnvVarSecretsManager()

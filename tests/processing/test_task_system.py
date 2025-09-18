@@ -2,7 +2,7 @@ import pytest
 import asyncio
 from unittest.mock import Mock, patch, AsyncMock
 import time
-from framework.processing.tasks import task, send_email, process_data, backup_database, cleanup_files, database_maintenance_operation
+from UCoreFrameworck.processing.tasks import task, send_email, process_data, backup_database, cleanup_files, database_maintenance_operation
 
 
 class TestTaskDecorator:
@@ -324,7 +324,7 @@ class TestTaskIntegration:
         mock_celery_app.task = Mock()
 
         # Patch the import
-        import framework.processing.background as bg_module
+        import UCoreFrameworck.processing.background as bg_module
         bg_module.celery_app = mock_celery_app
 
         # Define task with mocked celery

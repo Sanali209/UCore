@@ -7,9 +7,9 @@ import pytest
 from loguru import logger
 from tqdm import tqdm
 
-from framework.core.app import App
-from framework.messaging.event_bus import EventBus, Event
-from framework.resource.manager import ResourceManager
+from UCoreFrameworck.core.app import App
+from UCoreFrameworck.messaging.event_bus import EventBus, Event
+from UCoreFrameworck.resource.manager import ResourceManager
 
 class DummyResource:
     def __init__(self, name, resource_type="test"):

@@ -10,7 +10,7 @@ import time
 import threading
 import requests
 import matplotlib.pyplot as plt
-from framework.monitoring.metrics import counter, histogram
+from UCoreFrameworck.monitoring.metrics import counter, histogram
 
 # Define a business metric using the counter decorator
 from prometheus_client import Counter, Histogram

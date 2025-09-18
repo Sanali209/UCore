@@ -5,7 +5,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../.
 
 import pytest
 from unittest.mock import Mock
-from framework.core.di import Container, Scope, DependencyError, CircularDependencyError, NoProviderError, Depends
+from UCoreFrameworck.core.di import Container, Scope, DependencyError, CircularDependencyError, NoProviderError, Depends
 
 
 class TestContainerInitialization:

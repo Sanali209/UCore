@@ -20,8 +20,8 @@ The core domain provides the foundational infrastructure for UCore, including ap
 ## Usage Example
 
 ```python
-from framework.core.app import App
-from framework.core.component import Component
+from UCoreFrameworck.core.app import App
+from UCoreFrameworck.core.component import Component
 
 class MyComponent(Component):
     def start(self):
@@ -45,11 +45,11 @@ app.run()
 ## Integration Points
 
 - All other domains depend on core for lifecycle, DI, and config.
-- Plugins can extend any part of the framework via core.
+- Plugins can extend any part of the UCoreFrameworck via core.
 
 ---
 
 ## See Also
 
 - [Project Structure Guide](project-structure-guide.md)
-- [UCore Framework Guide](ucore-framework-guide.md)
+- [UCore Framework Guide](ucore-UCoreFrameworck-guide.md)

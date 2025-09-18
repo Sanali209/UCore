@@ -4,9 +4,11 @@ UCore Framework Example: Data Features
 Demonstrates database access, disk cache, and MongoDB integration.
 """
 
-from framework.data.db import SQLAlchemyAdapter
-from framework.data.disk_cache import DiskCacheAdapter
-from framework.data.mongo_adapter import MongoDBAdapter
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+from UCoreFrameworck.data.disk_cache import DiskCacheAdapter
+from UCoreFrameworck.data.mongo_adapter import MongoDBAdapter
 
 class MockApp:
     def __init__(self):
@@ -16,10 +18,6 @@ class MockApp:
 def main():
     app = MockApp()
 
-    # Database access demo (SQLAlchemyAdapter)
-    db_adapter = SQLAlchemyAdapter(app)
-    print("SQLAlchemyAdapter initialized:", db_adapter)
-
     # Disk cache demo (DiskCacheAdapter)
     cache_adapter = DiskCacheAdapter(app)
     print("DiskCacheAdapter initialized:", cache_adapter)
@@ -28,7 +26,7 @@ def main():
     mongo_adapter = MongoDBAdapter(app)
     print("MongoDBAdapter initialized:", mongo_adapter)
 
-    print("In a real app, these adapters would be registered as components and started by the framework.")
+    print("In a real app, these adapters would be registered as components and started by the UCoreFrameworck.")
 
 if __name__ == "__main__":
     main()

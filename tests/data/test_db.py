@@ -8,14 +8,14 @@ import asyncio
 from unittest.mock import Mock, patch, AsyncMock, call, ANY
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import declarative_base
-from framework.data.db import SQLAlchemyAdapter, Base
+from UCoreFrameworck.data.db import SQLAlchemyAdapter, Base
 
 
 class TestSQLAlchemyAdapterInitialization:
     """Test SQLAlchemyAdapter initialization."""
 
-    @patch('framework.data.db.create_async_engine')
-    @patch('framework.data.db.async_sessionmaker')
+    @patch('UCoreFrameworck.data.db.create_async_engine')
+    @patch('UCoreFrameworck.data.db.async_sessionmaker')
     def test_init(self, mock_sessionmaker, mock_engine):
         """Test basic initialization."""
         app = Mock()
@@ -48,8 +48,8 @@ class TestSQLAlchemyAdapterLifecycle:
         app.logger.info.assert_called_with("Database connection requested")
 
     @pytest.mark.asyncio
-    @patch('framework.data.db.create_async_engine')
-    @patch('framework.data.db.async_sessionmaker')
+    @patch('UCoreFrameworck.data.db.create_async_engine')
+    @patch('UCoreFrameworck.data.db.async_sessionmaker')
     @patch('sqlalchemy.text')
     async def test_start_success(self, mock_text, mock_sessionmaker, mock_engine):
         """Test successful start of adapter."""
@@ -100,7 +100,7 @@ class TestSQLAlchemyAdapterLifecycle:
         logger.info.assert_any_call("Database engine and session maker initialized.")
 
     @pytest.mark.asyncio
-    @patch('framework.data.db.create_async_engine')
+    @patch('UCoreFrameworck.data.db.create_async_engine')
     @patch('sqlalchemy.text')
     async def test_start_failure(self, mock_text, mock_engine):
         """Test start failure handling."""

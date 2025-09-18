@@ -13,7 +13,7 @@ import threading
 from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock
 import builtins
-from framework.core.settings import SettingsManager
+from UCoreFrameworck.core.settings import SettingsManager
 
 
 class TestSettingsManagerInitialization:

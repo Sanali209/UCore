@@ -6,11 +6,11 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../.
 import pytest
 import os
 import asyncio
-from framework.resource.manager import ResourceManager, Resource
-from framework.resource.ucore_registry import UCoreResourceRegistry
-from framework.resource.unified_registry import UnifiedResourceRegistry
-from framework.resource.backend_provider import BackendProvider, ServiceBackend, RoundRobinPolicy
-from framework.resource.secrets import EnvVarSecretsManager
+from UCoreFrameworck.resource.manager import ResourceManager, Resource
+from UCoreFrameworck.resource.ucore_registry import UCoreResourceRegistry
+from UCoreFrameworck.resource.unified_registry import UnifiedResourceRegistry
+from UCoreFrameworck.resource.backend_provider import BackendProvider, ServiceBackend, RoundRobinPolicy
+from UCoreFrameworck.resource.secrets import EnvVarSecretsManager
 
 class DummyResource(Resource):
     async def _initialize(self): pass

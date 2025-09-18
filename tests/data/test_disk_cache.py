@@ -9,7 +9,7 @@ import shutil
 from pathlib import Path
 from unittest.mock import Mock, MagicMock, patch, call
 import os
-from framework.data.disk_cache import DiskCacheAdapter, create_disk_cache_adapter
+from UCoreFrameworck.data.disk_cache import DiskCacheAdapter, create_disk_cache_adapter
 
 
 class TestDiskCacheAdapterInitialization:

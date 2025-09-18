@@ -7,10 +7,10 @@ import pytest
 import asyncio
 from unittest.mock import Mock, patch, call, AsyncMock
 import argparse
-from framework.core.app import App
-from framework.core.component import Component
-from framework.core.di import Container
-from framework.core.config import Config
+from UCoreFrameworck.core.app import App
+from UCoreFrameworck.core.component import Component
+from UCoreFrameworck.core.di import Container
+from UCoreFrameworck.core.config import Config
 
 
 class TestAppInitialization:

@@ -1,9 +1,12 @@
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 import pytest
 import asyncio
 from unittest.mock import Mock, patch, AsyncMock
-from framework.resource.manager import ResourceManager
-from framework.resource.resource import Resource, ResourceHealth
-from framework.messaging.event_bus import EventBus
+from UCoreFrameworck.resource.manager import ResourceManager
+from UCoreFrameworck.resource.resource import Resource, ResourceHealth
+from UCoreFrameworck.messaging.event_bus import EventBus
 
 
 # Mock Resource Implementation
@@ -184,7 +187,7 @@ class TestResourceRegistration:
         """Test resource retrieval when resource doesn't exist."""
         manager = ResourceManager()
 
-        from framework.resource.exceptions import ResourceNotFoundError
+        from UCoreFrameworck.resource.exceptions import ResourceNotFoundError
 
         with pytest.raises(ResourceNotFoundError):
             manager.get_resource("nonexistent")
@@ -653,7 +656,7 @@ class TestErrorHandling:
         manager = ResourceManager()
 
         # Accessing non-existent resource should raise ResourceNotFoundError
-        from framework.resource.exceptions import ResourceNotFoundError
+        from UCoreFrameworck.resource.exceptions import ResourceNotFoundError
 
         with pytest.raises(ResourceNotFoundError):
             manager.get_resource("nonexistent")

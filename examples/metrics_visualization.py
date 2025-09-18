@@ -6,7 +6,7 @@ Requirements:
 """
 
 import time
-from framework.monitoring.metrics import MetricsManager
+from UCoreFrameworck.monitoring.metrics import MetricsManager
 import matplotlib.pyplot as plt
 
 def simulate_metrics(metrics: MetricsManager, metric_name: str):

@@ -2,11 +2,11 @@ import pytest
 import asyncio
 from unittest.mock import Mock, patch, AsyncMock
 from aiohttp import web
-from framework.monitoring.metrics import HTTPMetricsAdapter, Counter, Histogram, Gauge
+from UCoreFrameworck.monitoring.metrics import HTTPMetricsAdapter, Counter, Histogram, Gauge
 import prometheus_client
 from prometheus_client import CollectorRegistry
-from framework.core.app import App
-from framework.monitoring.logging import Logging
+from UCoreFrameworck.core.app import App
+from UCoreFrameworck.monitoring.logging import Logging
 
 
 class TestHTTPMetricsAdapterInitialization:
@@ -45,7 +45,7 @@ class TestHTTPMetricsAdapterInitialization:
         prometheus_client.REGISTRY = registry
         adapter = HTTPMetricsAdapter(app, registry=registry)
 
-        with patch('framework.monitoring.metrics.time') as mock_time:
+        with patch('UCoreFrameworck.monitoring.metrics.time') as mock_time:
             adapter.start()
 
         # Should not raise any exceptions (logger call not enforced in mock)

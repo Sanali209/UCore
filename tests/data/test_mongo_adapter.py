@@ -7,9 +7,9 @@ import pytest
 import asyncio
 from unittest.mock import Mock, MagicMock, patch, AsyncMock
 import tempfile
-from framework.data.mongo_adapter import MongoDBAdapter
-from framework.core.app import App
-from framework.core.config import Config
+from UCoreFrameworck.data.mongo_adapter import MongoDBAdapter
+from UCoreFrameworck.core.app import App
+from UCoreFrameworck.core.config import Config
 
 
 class TestMongoDBAdapterInitialization:
@@ -17,8 +17,8 @@ class TestMongoDBAdapterInitialization:
 
     def test_adapter_init(self):
         """Test basic adapter initialization."""
-        with patch('framework.data.mongo_adapter.AsyncIOMotorClient') as mock_client_class:
-            with patch('framework.data.mongo_adapter.Index') as mock_index:
+        with patch('UCoreFrameworck.data.mongo_adapter.AsyncIOMotorClient') as mock_client_class:
+            with patch('UCoreFrameworck.data.mongo_adapter.Index') as mock_index:
                 app = Mock()
                 app.logger = Mock()
 
@@ -32,8 +32,8 @@ class TestMongoDBAdapterInitialization:
 
     def test_register_models(self):
         """Test model registration functionality."""
-        with patch('framework.data.mongo_adapter.AsyncIOMotorClient'):
-            with patch('framework.data.mongo_adapter.Index'):
+        with patch('UCoreFrameworck.data.mongo_adapter.AsyncIOMotorClient'):
+            with patch('UCoreFrameworck.data.mongo_adapter.Index'):
                 app = Mock()
                 app.logger = Mock()
 
@@ -59,8 +59,8 @@ class TestMongoDBAdapterInitialization:
     @pytest.mark.asyncio
     async def test_adapter_start_success(self):
         """Test successful adapter startup."""
-        with patch('framework.data.mongo_adapter.AsyncIOMotorClient') as mock_client_class:
-            with patch('framework.data.mongo_adapter.Index') as mock_index_class:
+        with patch('UCoreFrameworck.data.mongo_adapter.AsyncIOMotorClient') as mock_client_class:
+            with patch('UCoreFrameworck.data.mongo_adapter.Index') as mock_index_class:
                 app = Mock()
                 app.logger = Mock()
                 # Provide config as nested dict to match adapter expectations
@@ -126,8 +126,8 @@ class TestMongoDBAdapterInitialization:
     @pytest.mark.asyncio
     async def test_adapter_stop_success(self):
         """Test successful adapter shutdown."""
-        with patch('framework.data.mongo_adapter.AsyncIOMotorClient') as mock_client_class:
-            with patch('framework.data.mongo_adapter.Index'):
+        with patch('UCoreFrameworck.data.mongo_adapter.AsyncIOMotorClient') as mock_client_class:
+            with patch('UCoreFrameworck.data.mongo_adapter.Index'):
                 app = Mock()
                 app.logger = Mock()
                 app.container.get.return_value = {
@@ -153,8 +153,8 @@ class TestMongoDBAdapterInitialization:
 
     def test_adapter_start_missing_config(self):
         """Test adapter startup with missing configuration."""
-        with patch('framework.data.mongo_adapter.AsyncIOMotorClient'):
-            with patch('framework.data.mongo_adapter.Index'):
+        with patch('UCoreFrameworck.data.mongo_adapter.AsyncIOMotorClient'):
+            with patch('UCoreFrameworck.data.mongo_adapter.Index'):
                 app = Mock()
                 app.logger = Mock()
                 app.container.get.return_value = {}  # Empty config
@@ -172,8 +172,8 @@ class TestBulkOperations:
 
     def test_add_delete_many_bulk(self):
         """Test adding bulk delete operations."""
-        with patch('framework.data.mongo_adapter.AsyncIOMotorClient'):
-            with patch('framework.data.mongo_adapter.Index'):
+        with patch('UCoreFrameworck.data.mongo_adapter.AsyncIOMotorClient'):
+            with patch('UCoreFrameworck.data.mongo_adapter.Index'):
                 app = Mock()
                 app.logger = Mock()
 
@@ -200,8 +200,8 @@ class TestBulkOperations:
     @pytest.mark.asyncio
     async def test_process_bulk_ops_success(self):
         """Test successful bulk operation processing."""
-        with patch('framework.data.mongo_adapter.AsyncIOMotorClient') as mock_client_class:
-            with patch('framework.data.mongo_adapter.Index'):
+        with patch('UCoreFrameworck.data.mongo_adapter.AsyncIOMotorClient') as mock_client_class:
+            with patch('UCoreFrameworck.data.mongo_adapter.Index'):
                 app = Mock()
                 app.logger = Mock()
                 app.container.get.return_value = {
@@ -238,8 +238,8 @@ class TestBulkOperations:
     @pytest.mark.asyncio
     async def test_process_bulk_ops_error(self):
         """Test bulk operation processing with error."""
-        with patch('framework.data.mongo_adapter.AsyncIOMotorClient') as mock_client_class:
-            with patch('framework.data.mongo_adapter.Index'):
+        with patch('UCoreFrameworck.data.mongo_adapter.AsyncIOMotorClient') as mock_client_class:
+            with patch('UCoreFrameworck.data.mongo_adapter.Index'):
                 app = Mock()
                 app.logger = Mock()
                 app.container.get.return_value = {
@@ -277,8 +277,8 @@ class TestErrorHandling:
     @pytest.mark.asyncio
     async def test_start_connection_error(self):
         """Test startup with connection error."""
-        with patch('framework.data.mongo_adapter.AsyncIOMotorClient') as mock_client_class:
-            with patch('framework.data.mongo_adapter.Index'):
+        with patch('UCoreFrameworck.data.mongo_adapter.AsyncIOMotorClient') as mock_client_class:
+            with patch('UCoreFrameworck.data.mongo_adapter.Index'):
                 app = Mock()
                 app.logger = Mock()
                 app.container.get.return_value = {
@@ -299,8 +299,8 @@ class TestErrorHandling:
     @pytest.mark.asyncio
     async def test_model_injection_error(self):
         """Test model injection error handling."""
-        with patch('framework.data.mongo_adapter.AsyncIOMotorClient') as mock_client_class:
-            with patch('framework.data.mongo_adapter.Index'):
+        with patch('UCoreFrameworck.data.mongo_adapter.AsyncIOMotorClient') as mock_client_class:
+            with patch('UCoreFrameworck.data.mongo_adapter.Index'):
                 app = Mock()
                 app.logger = Mock()
                 app.container.get.return_value = {
@@ -341,8 +341,8 @@ class TestIntegration:
     @pytest.mark.asyncio
     async def test_adapter_with_uvirtual_core_component(self):
         """Test adapter integration with UCore component system."""
-        with patch('framework.data.mongo_adapter.AsyncIOMotorClient'):
-            with patch('framework.data.mongo_adapter.Index'):
+        with patch('UCoreFrameworck.data.mongo_adapter.AsyncIOMotorClient'):
+            with patch('UCoreFrameworck.data.mongo_adapter.Index'):
                 app = App("TestApp")
 
                 # Add adapter to app
@@ -381,8 +381,8 @@ class TestIntegration:
 
     def test_adapter_config_defaults(self):
         """Test adapter uses proper defaults when config is missing."""
-        with patch('framework.data.mongo_adapter.AsyncIOMotorClient'):
-            with patch('framework.data.mongo_adapter.Index'):
+        with patch('UCoreFrameworck.data.mongo_adapter.AsyncIOMotorClient'):
+            with patch('UCoreFrameworck.data.mongo_adapter.Index'):
                 app = Mock()
                 app.logger = Mock()
                 app.container.get.return_value = {}  # Empty config

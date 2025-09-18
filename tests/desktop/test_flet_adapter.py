@@ -8,7 +8,7 @@ import asyncio
 from unittest.mock import Mock, patch, AsyncMock, call
 import flet as ft
 
-from framework.desktop.ui.flet.flet_adapter import FletAdapter
+from UCoreFrameworck.desktop.ui.flet.flet_adapter import FletAdapter
 
 
 class TestFletAdapterInitialization:
@@ -39,7 +39,7 @@ class TestFletAdapterInitialization:
 class TestFletAdapterLifecyle:
     """Test FletAdapter start/stop lifecycle."""
 
-    @patch('framework.desktop.ui.flet.flet_adapter.ft.app_async')
+    @patch('UCoreFrameworck.desktop.ui.flet.flet_adapter.ft.app_async')
     def test_start_success(self, mock_app_async):
         """Test successful start of Flet application."""
         app = Mock()
@@ -90,7 +90,7 @@ class TestFletAdapterLifecyle:
         mock_loop.create_task.return_value = mock_task
 
         with patch('asyncio.get_running_loop', return_value=mock_loop), \
-             patch('framework.desktop.ui.flet.flet_adapter.ft.app_async') as mock_app_async:
+             patch('UCoreFrameworck.desktop.ui.flet.flet_adapter.ft.app_async') as mock_app_async:
 
             await adapter.start()
 
@@ -154,7 +154,7 @@ class TestFletAdapterErrorHandling:
     """Test FletAdapter error handling scenarios."""
 
     @pytest.mark.asyncio
-    @patch('framework.desktop.ui.flet.flet_adapter.ft.app_async')
+    @patch('UCoreFrameworck.desktop.ui.flet.flet_adapter.ft.app_async')
     async def test_start_with_flet_error(self, mock_app_async):
         """Test handling of errors during Flet app initialization."""
         app = Mock()
@@ -180,7 +180,7 @@ class TestFletAdapterIntegration:
     """Test FletAdapter integration scenarios."""
 
     @pytest.mark.asyncio
-    @patch('framework.desktop.ui.flet.flet_adapter.ft.app_async')
+    @patch('UCoreFrameworck.desktop.ui.flet.flet_adapter.ft.app_async')
     async def test_multiple_start_stop_cycles(self, mock_app_async):
         """Test multiple start/stop cycles."""
         app = Mock()
@@ -214,7 +214,7 @@ class TestFletAdapterIntegration:
             assert adapter._flet_task == mock_task2
 
     @pytest.mark.asyncio
-    @patch('framework.desktop.ui.flet.flet_adapter.ft.app_async')
+    @patch('UCoreFrameworck.desktop.ui.flet.flet_adapter.ft.app_async')
     async def test_default_port_usage(self, mock_app_async):
         """Test that default port (8085) is used when not specified."""
         app = Mock()
@@ -237,7 +237,7 @@ class TestFletAdapterIntegration:
 
     def test_component_inheritance(self):
         """Test that FletAdapter properly inherits from Component."""
-        from framework.core.component import Component
+        from UCoreFrameworck.core.component import Component
 
         app = Mock()
         target_func = Mock()
@@ -261,7 +261,7 @@ class TestFletAdapterIntegration:
         mock_loop.create_task.return_value = mock_task
 
         with patch('asyncio.get_running_loop', return_value=mock_loop), \
-             patch('framework.desktop.ui.flet.flet_adapter.ft.app_async'):
+             patch('UCoreFrameworck.desktop.ui.flet.flet_adapter.ft.app_async'):
 
             await adapter.start()
             assert adapter._flet_task is not None
@@ -272,7 +272,7 @@ class TestFletAdapterIntegration:
             mock_task.cancel.assert_called_once()
 
     @pytest.mark.asyncio
-    @patch('framework.desktop.ui.flet.flet_adapter.ft.app_async')
+    @patch('UCoreFrameworck.desktop.ui.flet.flet_adapter.ft.app_async')
     async def test_different_target_functions(self, mock_app_async):
         """Test with different target functions."""
         app = Mock()
@@ -307,7 +307,7 @@ class TestFletAdapterIntegration:
                 )
 
     @pytest.mark.asyncio
-    @patch('framework.desktop.ui.flet.flet_adapter.ft.app_async')
+    @patch('UCoreFrameworck.desktop.ui.flet.flet_adapter.ft.app_async')
     async def test_port_range_variations(self, mock_app_async):
         """Test adapter with various port numbers."""
         app = Mock()

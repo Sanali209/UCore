@@ -1,5 +1,5 @@
 import pytest
-from framework.monitoring.progress import ProgressManager, TqdmProgressVisualizer, LoguruProgressVisualizer, ProgressVisualizer
+from UCoreFrameworck.monitoring.progress import ProgressManager, TqdmProgressVisualizer, LoguruProgressVisualizer, ProgressVisualizer
 
 class DummyVisualizer(ProgressVisualizer):
     def __init__(self):
@@ -38,12 +38,12 @@ def test_progress_manager_set_progress():
 
 def test_tqdm_progress_visualizer(monkeypatch):
     # Patch tqdm to avoid actual progress bar in test output
-    monkeypatch.setattr("framework.monitoring.progress.tqdm", lambda *a, **k: None)
+    monkeypatch.setattr("UCoreFrameworck.monitoring.progress.tqdm", lambda *a, **k: None)
     vis = TqdmProgressVisualizer(max_progress=10, description="TQDM Test")
     vis.update_progress(5, 10, "Half", "TQDM Test")
 
 def test_loguru_progress_visualizer(monkeypatch):
     # Patch loguru.logger to avoid actual logging in test output
-    monkeypatch.setattr("framework.monitoring.progress.logger", type("DummyLogger", (), {"info": lambda *a, **k: None})())
+    monkeypatch.setattr("UCoreFrameworck.monitoring.progress.logger", type("DummyLogger", (), {"info": lambda *a, **k: None})())
     vis = LoguruProgressVisualizer()
     vis.update_progress(3, 10, "Loguru", "Loguru Test")
