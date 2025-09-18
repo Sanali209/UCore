@@ -3,7 +3,7 @@ MongoDB Database Resource
 Concrete implementation of DatabaseResource for MongoDB
 """
 
-from framework.monitoring.logging import Logging
+from loguru import logger
 from typing import Any, Dict, Optional, Union, List
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase, AsyncIOMotorCollection
 from pymongo.errors import ServerSelectionTimeoutError, OperationFailure
@@ -12,7 +12,7 @@ from .database import DatabaseResource
 from ..exceptions import ResourceError, ResourceConnectionError
 
 
-logger = Logging().get_logger(__name__)
+logger = logger.bind(logger_name=__name__)
 
 
 class MongoDBResource(DatabaseResource):

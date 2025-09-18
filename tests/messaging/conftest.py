@@ -13,7 +13,8 @@ from framework.messaging.events import Event, ComponentStartedEvent
 @pytest.fixture
 def event_bus():
     """Create EventBus instance for testing."""
-    bus = EventBus()
+    from loguru import logger as loguru_logger
+    bus = EventBus(loguru_logger)
     return bus
 
 

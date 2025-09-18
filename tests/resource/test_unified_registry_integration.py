@@ -1,4 +1,4 @@
-import pytest
+
 from framework.resource.manager import ResourceManager, Resource
 from framework.resource.ucore_registry import UCoreResourceRegistry
 from framework.resource.unified_registry import UnifiedResourceRegistry

@@ -9,7 +9,7 @@ import asyncio
 import signal
 import inspect
 from typing import Optional, List
-from framework.monitoring.logging import Logging
+from loguru import logger
 
 
 class WorkerManager:
@@ -31,7 +31,7 @@ class WorkerManager:
         self.queues = queues or ['celery']
         self.verbosity = verbosity
         self.log_level = log_level
-        self.logger = Logging().get_logger("WorkerManager")
+        self.logger = logger.bind(logger_name="WorkerManager")
         self.running = False
         self.celery_app = None
 

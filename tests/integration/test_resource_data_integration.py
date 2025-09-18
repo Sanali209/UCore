@@ -70,6 +70,6 @@ class TestResourceDataIntegration:
     @pytest.mark.asyncio
     async def test_resource_manager_reports_status(self, resource_manager):
         logger.info("Testing ResourceManager status reporting")
-        stats = await resource_manager.get_resource_stats()
+        stats = resource_manager.get_resource_stats()
         logger.info(f"Resource stats: {stats}")
         assert isinstance(stats, dict)

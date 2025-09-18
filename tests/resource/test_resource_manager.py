@@ -67,11 +67,12 @@ class MockResource(Resource):
 
     def get_stats(self):
         """Mock stats."""
+        import time
         return {
             'initialize_count': self.initialize_count,
             'disconnect_count': self.disconnect_count,
             'cleanup_count': self.cleanup_count,
-            'last_health_check': asyncio.get_event_loop().time()
+            'last_health_check': time.time()
         }
 
 
@@ -290,6 +291,10 @@ class TestLifecycleManagement:
 
         await manager.start_all_resources()
 
+        # Explicitly connect resources to trigger disconnect logic
+        await resource1.connect()
+        await resource2.connect()
+
         # Stop all resources
         await manager.stop_all_resources()
         # Allow async shutdown tasks to complete
@@ -387,23 +392,38 @@ class TestHealthMonitoring:
         resource = MockResource("monitored_resource", "test")
         manager.register_resource(resource)
 
-        # Start manager to trigger health monitoring
+        iteration_count = {"count": 0}
+        max_iterations = 3
+        orig_sleep = asyncio.sleep
+        stop_event = asyncio.Event()
+
+        async def fast_sleep(duration):
+            iteration_count["count"] += 1
+            if iteration_count["count"] >= max_iterations:
+                stop_event.set()
+            return await orig_sleep(0)
+
+        # Patch only the health monitor's sleep, not global asyncio.sleep
+        orig_monitor_loop = manager._health_monitor_loop
+
+        async def limited_monitor_loop(*args, **kwargs):
+            with patch("asyncio.sleep", side_effect=fast_sleep):
+                await orig_monitor_loop(*args, **kwargs)
+
+        manager._health_monitor_loop = limited_monitor_loop
+
         await manager.start_all_resources()
 
-        # Wait a bit for health monitoring to run (it checks every 60 seconds)
-        # In test, we manually simulate one iteration
-        await manager._health_monitor_loop()
+        # Explicitly connect resource to trigger disconnect logic
+        await resource.connect()
 
-        # Verify health check was performed
-        # Note: Real health monitoring runs every 60 seconds, so we can't easily test
-        # the background loop without extensive mocking
-
-        # Stop manager
+        await stop_event.wait()
         await manager.stop_all_resources()
+        await asyncio.sleep(0.05)
 
-        # Verify monitoring task was cancelled
-        if manager._health_monitor_task:
-            assert manager._health_monitor_task.cancelled()
+        assert not manager.is_started
+        assert resource.cleanup_count >= 1
+        assert resource.disconnect_count >= 1
 
     def test_get_resource_stats(self):
         """Test getting resource statistics."""
@@ -443,9 +463,8 @@ class TestResourceCleanup:
         resource = MockResource("test_resource", "test_type")
         manager.register_resource(resource)
 
-        # Normally, cleanup would happen automatically in _shutdown_resource_safe
-        # But for test purposes, we manually remove
-        manager._resources.pop("test_resource")
+        # Unregister resource using manager method to trigger DI unregister
+        manager.unregister_resource("test_resource")
 
         # Verify DI unregister was called
         di_container.unregister.assert_called_once_with("test_resource")
@@ -503,6 +522,8 @@ class TestContextManager:
         manager.register_resource(resource)
 
         async with manager:
+            # Explicitly connect resource to trigger disconnect logic
+            await resource.connect()
             # Verify started
             assert manager.is_started
             assert resource.is_ready

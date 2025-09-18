@@ -5,7 +5,7 @@ Core event publish/subscribe system for in-process component communication.
 
 import asyncio
 import inspect
-from framework.monitoring.logging import Logging
+from loguru import logger
 from collections import defaultdict
 from typing import Any, Callable, Dict, List, Type, Union, Tuple, Optional
 from .events import Event
@@ -71,7 +71,8 @@ class EventBus:
     def __init__(self, logger=None):
         self._handlers: Dict[Type[Event], List[EventHandlerInfo]] = defaultdict(list)
         self._middlewares: List[Callable[[Event, Callable], Any]] = []
-        self._logger = logger or Logging().get_logger(__name__)
+        from loguru import logger as loguru_logger
+        self._logger = logger if logger is not None else loguru_logger.bind(logger_name=__name__)
         self._next_handler_id = 0
         self._running = False
 

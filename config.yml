@@ -1,5 +1,5 @@
 app_name: DuckDuckGo Search
-download_directory: C:\Users\User\Downloads\duckduckgo_images
+download_directory: C:\Users\sanal\Downloads\duckduckgo_images
 log_level: INFO
 max_results: 200
 recent_directories: []

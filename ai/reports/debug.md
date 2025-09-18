@@ -1,69 +1,103 @@
-# Test Failure & Freeze Report
+# Test Failures and Error Analysis Report
 
-## Group: Timeout/Slow Test
+## Group 1: NotImplementedError — Missing `collection_name` Attribute
 
-### File: tests/resource/test_resource_manager.py
+### Description
+Several MongoDB record classes do not define the required `collection_name` class attribute. This attribute is necessary for the `BaseMongoRecord`/`CollectionRecord` ORM to map models to MongoDB collections. Its absence causes all CRUD operations on these models to fail with `NotImplementedError`.
 
-#### Test: `TestLifecycleManagement.test_shutdown_timeout`
+### Affected Classes and Files
+- **CatalogRecord** (`framework/fs/models.py`)
+- **FileRecord** (`framework/fs/models.py`)
+- **TagRecord** (`framework/fs/models.py`)
+- **RelationRecord** (`framework/fs/components/relations.py`)
+- **WebLinkRecord** (`framework/fs/components/web_link.py`)
 
-- **Type:** Timeout/Slow Test
-- **Description:**  
-  This test intentionally sleeps for 35 seconds during resource cleanup to verify that the ResourceManager's shutdown logic correctly handles timeouts. The shutdown timeout is set to 30 seconds, so the test will always take at least 30 seconds to complete, causing the test suite to appear to freeze or hang during this period.
-- **Relevant Code:**
-  - **Test:**  
-    ```python
-    async def test_shutdown_timeout(self):
-        ...
-        async def slow_cleanup():
-            await asyncio.sleep(35)  # Longer than timeout
-            await resource.cleanup()
-        resource.cleanup = slow_cleanup
-        ...
-        with patch('asyncio.wait_for') as mock_wait_for:
-            mock_wait_for.side_effect = asyncio.TimeoutError()
-            await manager.start_all_resources()
-            await manager.stop_all_resources()
-            # Should handle timeout gracefully
-            mock_wait_for.assert_called_once()
-    ```
-  - **ResourceManager:**  
-    ```python
-    await asyncio.wait_for(
-        asyncio.gather(*shutdown_tasks, return_exceptions=True),
-        timeout=self._shutdown_timeout
-    )
-    ```
-- **Analysis:**  
-  The test is not a deadlock or bug, but a deliberate simulation of a slow resource cleanup to test timeout handling. The ResourceManager's shutdown logic is robust, using asyncio.wait_for to enforce the timeout and logging errors as needed.
+### Affected Tests
+- `tests/fs/test_catalog_manager.py`
+- `tests/fs/test_files_db.py`
+- `tests/fs/test_tag_manager.py`
+- `tests/fs/test_relation_record.py`
+- `tests/fs/test_web_link_record.py`
+- `tests/fs/test_files_db_resource.py`
 
-- **Recommendation:**  
-  If test suite speed is a concern, consider reducing the sleep duration and shutdown timeout for the test, or marking it as a slow test to be skipped in regular runs.
+### Example Error
+```
+NotImplementedError: CatalogRecord must define a 'collection_name' attribute.
+```
+
+### Root Cause
+All affected classes inherit from `BaseMongoRecord` (directly or via `CollectionRecord`). The base class expects a `collection_name` attribute to be defined at the class level. Without it, any database operation raises `NotImplementedError`.
+
+### Recommendation
+Add a `collection_name` class attribute to each affected model, e.g.:
+```python
+class CatalogRecord(CollectionRecord):
+    collection_name = "catalogs"
+    ...
+```
+Repeat for each model with an appropriate collection name.
 
 ---
 
-## Group: Async Lifecycle/State Handling
+## Group 2: TypeError — ResourceEvent Unexpected Keyword Argument
 
-### File: tests/resource/test_resource_manager.py
+### Description
+A test involving resource initialization fails due to a `TypeError`:
+```
+TypeError: ResourceEvent.__init__() got an unexpected keyword argument 'metadata'
+```
+This occurs in:
+- `framework/resource/resource.py` (when calling `ResourceEvent`)
+- Affects: `tests/fs/test_files_db.py::test_files_db_resource_lifecycle`
 
-#### Tests: 
-- `TestLifecycleManagement.test_stop_all_resources_success`
-- `TestLifecycleManagement.test_stop_all_resources_with_failure`
-- `TestLifecycleManagement.test_shutdown_timeout`
+### Root Cause
+The `ResourceEvent` class does not accept a `metadata` keyword argument, but the code attempts to pass it.
 
-- **Type:** Async Lifecycle/State Handling
-- **Description:**  
-  These tests involve stopping resources and cleanup using async methods. Freezing or hanging can occur if:
-    - Resource state transitions are not handled correctly (e.g., not set to READY/CONNECTED).
-    - Async cleanup/disconnect methods are not awaited or do not complete.
-    - MockResource or ResourceManager logic does not advance state as expected, causing ResourceManager to wait indefinitely for shutdown tasks.
-- **Relevant Code:**  
-  - MockResource async methods use asyncio.sleep to simulate work, but improper state or missing awaits can cause hangs.
-  - ResourceManager uses asyncio.create_task and asyncio.wait_for to manage shutdown, but relies on resources completing their async cleanup/disconnect.
-- **Analysis:**  
-  If a resource's cleanup/disconnect never completes or its state is not advanced, ResourceManager's shutdown waits indefinitely or until timeout. This can appear as a freeze in the test suite.
-- **Recommendation:**  
-  - Ensure all async resource methods are properly awaited and advance state as expected.
-  - Add timeouts or checks in tests to fail fast if a resource does not complete shutdown.
-  - Consider adding debug logging in MockResource and ResourceManager to trace state transitions and task completions during tests.
+### Recommendation
+Update the `ResourceEvent` class to accept a `metadata` argument, or remove the argument from the call in `resource.py`.
 
 ---
+
+## Group 3: RuntimeWarnings — Coroutine Was Never Awaited
+
+### Description
+Multiple warnings about coroutines not being awaited, e.g.:
+```
+RuntimeWarning: coroutine 'AsyncMockMixin._execute_mock_call' was never awaited
+```
+These are found in:
+- `tests/desktop/test_flet_adapter.py`
+- `tests/messaging/test_redis_adapter.py`
+- `tests/messaging/test_redis_event_bridge.py`
+- `tests/monitoring/test_http_metrics.py`
+- `tests/processing/test_task_system.py`
+- `tests/resource/test_resource_manager.py`
+- `tests/web/test_http_server.py`
+- ...and others
+
+### Root Cause
+Async functions or mocks are called without `await`. This can cause tests to pass incorrectly or miss async errors.
+
+### Recommendation
+Ensure all async functions and mocks are awaited in tests and implementation.
+
+---
+
+## Group 4: Pytest Deprecation Warnings
+
+### Description
+Warnings about deprecated or soon-to-be-unsupported pytest features, especially around async fixtures.
+
+### Recommendation
+Update test fixtures to use `@pytest_asyncio.fixture` or compatible async fixture patterns.
+
+---
+
+## Summary Table
+
+| File/Test                                 | Error Type                  | Root Cause/Recommendation                  |
+|--------------------------------------------|-----------------------------|--------------------------------------------|
+| test_catalog_manager.py, test_files_db.py, test_tag_manager.py, test_relation_record.py, test_web_link_record.py, test_files_db_resource.py | NotImplementedError          | Add `collection_name` to models            |
+| test_files_db.py::test_files_db_resource_lifecycle | TypeError                   | Fix `ResourceEvent` constructor            |
+| Many tests                                | RuntimeWarning              | Await all async functions/mocks            |
+| Many tests                                | PytestDeprecationWarning    | Update async fixture usage                 |

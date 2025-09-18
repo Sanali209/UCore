@@ -5,10 +5,7 @@ from framework.resource.exceptions import (
     ResourceError, ResourceNotFoundError, ResourcePoolExhaustedError, ResourceConnectionError,
     ResourceTimeoutError, ResourceConfigurationError, ResourceStateError
 )
-from framework.resource.types.api import ApiResource
-from framework.resource.types.database import DatabaseResource
-from framework.resource.types.file import FileResource
-from framework.resource.types.mongodb import MongoDBResource
+
 
 def test_service_backend_init_and_methods():
     backend = ServiceBackend("test", tags=["a"], health="healthy", backend_load=0.1)

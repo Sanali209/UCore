@@ -26,7 +26,8 @@ class TestEventBusInitialization:
 
     def test_event_bus_with_logger(self):
         """Test EventBus with custom logger."""
-        custom_logger = logging.getLogger("test_logger")
+        from loguru import logger as loguru_logger
+        custom_logger = loguru_logger.bind(logger_name="test_logger")
         bus = EventBus(custom_logger)
         assert bus._logger == custom_logger
 
