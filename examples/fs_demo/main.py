@@ -4,10 +4,10 @@ UCore Framework Example: File System Features
 Demonstrates file system abstraction, annotation, indexing, and vector DB.
 """
 
-from UCoreFrameworck.fs.resource import FilesDBResource
-from UCoreFrameworck.fs.annotation import get_annotation_job
-from UCoreFrameworck.fs.indexers import get_strategy_by_extension
-from UCoreFrameworck.fs.vector_db_ext import EmbeddingFusion, vectorize_file
+from ucore_framework.fs.resource import FilesDBResource
+from ucore_framework.fs.annotation import get_annotation_job
+from ucore_framework.fs.indexers import get_strategy_by_extension
+from ucore_framework.fs.vector_db_ext import EmbeddingFusion, vectorize_file
 
 class MockApp:
     def __init__(self):
@@ -18,7 +18,7 @@ def main():
     app = MockApp()
 
     # File system abstraction demo
-    from UCoreFrameworck.messaging.event_bus import EventBus
+    from ucore_framework.messaging.event_bus import EventBus
     class MockEventBus(EventBus):
         def __init__(self):
             pass

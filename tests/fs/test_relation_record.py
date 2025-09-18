@@ -1,6 +1,6 @@
 import pytest
 import asyncio
-from UCoreFrameworck.fs.components.relations import RelationRecord
+from ucore_framework.fs.components.relations import RelationRecord
 
 @pytest.mark.asyncio
 async def test_create_and_delete_relation():

@@ -17,7 +17,7 @@ The web domain provides HTTP server capabilities for UCore, including routing, m
 ## Usage Example
 
 ```python
-from UCoreFrameworck.web.http import HttpServer
+from ucore_framework.web.http import HttpServer
 
 app = App("WebApp")
 http_server = HttpServer(app)
@@ -61,4 +61,4 @@ async def log_request(request, call_next):
 ## See Also
 
 - [Project Structure Guide](project-structure-guide.md)
-- [UCore Framework Guide](ucore-UCoreFrameworck-guide.md)
+- [UCore Framework Guide](ucore-ucore_framework-guide.md)

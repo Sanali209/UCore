@@ -1,4 +1,4 @@
-from UCoreFrameworck.core.component import Component
+from ucore_framework.core.component import Component
 from loguru import logger
 import time
 import asyncio

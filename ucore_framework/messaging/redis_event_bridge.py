@@ -175,7 +175,7 @@ class RedisToEventBusBridge:
 
                 # Publish to EventBus
                 if hasattr(self, 'app') and self.app:
-                    from UCoreFrameworck.messaging.events import UserEvent  # Import here to avoid circular imports
+                    from ucore_framework.messaging.events import UserEvent  # Import here to avoid circular imports
                     user_event = UserEvent(
                         event_type=f"redis:{redis_channel}",
                         data={

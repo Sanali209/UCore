@@ -1,6 +1,6 @@
-from UCoreFrameworck.resource.resource import ObservableResource
-from UCoreFrameworck.messaging.event_bus import EventBus
-from UCoreFrameworck.fs.models import FileRecord, FolderRecord, TagRecord, CatalogRecord, Detection, AnnotationRecord
+from ucore_framework.resource.resource import ObservableResource
+from ucore_framework.messaging.event_bus import EventBus
+from ucore_framework.fs.models import FileRecord, FolderRecord, TagRecord, CatalogRecord, Detection, AnnotationRecord
 
 class FilesDBResource(ObservableResource):
     """
@@ -52,7 +52,7 @@ class FilesDBResource(ObservableResource):
 
     async def _observable_health_check(self):
         """Resource-specific observable health check (stub)."""
-        from UCoreFrameworck.resource.resource import ResourceHealth
+        from ucore_framework.resource.resource import ResourceHealth
         return ResourceHealth(status="healthy", details={})
 
     async def _observable_cleanup(self) -> None:
@@ -85,7 +85,7 @@ class FilesDBResource(ObservableResource):
         Returns:
             ResourceHealth: Health status and details.
         """
-        from UCoreFrameworck.resource.resource import ResourceHealth
+        from ucore_framework.resource.resource import ResourceHealth
         from typing import Any, Dict
         pool_status: Any = "ok" if self.pool else "not_configured"
         details: Dict[str, Any] = {"pool": pool_status}
@@ -102,7 +102,7 @@ class FilesDBResource(ObservableResource):
         if hasattr(self, "adapter") and self.adapter:
             record = await self.adapter.add_file(file_data)
         else:
-            from UCoreFrameworck.messaging.events import Event
+            from ucore_framework.messaging.events import Event
             record = await FileRecord.new_record(**file_data)
         if hasattr(self.event_bus, "publish"):
             result = self.event_bus.publish(FileAddedEvent(record))
@@ -167,7 +167,7 @@ class FilesDBResource(ObservableResource):
             return await self.adapter.search_files(query)
         return await FileRecord.find(query)
 
-from UCoreFrameworck.messaging.events import Event
+from ucore_framework.messaging.events import Event
 class FileAddedEvent(Event):
     """
     Event published when a file is added to the resource.

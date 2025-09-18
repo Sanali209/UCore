@@ -88,7 +88,7 @@ class Container:
                     try:
                         module = getattr(implementation, '__module__', '')
                         globals_dict = {}
-                        import UCoreFrameworck.app
+                        import ucore_framework.app
                         for mod in [UCoreFrameworck.app]:
                             globals_dict.update(mod.__dict__)
                         if module and module in sys.modules:
@@ -164,3 +164,17 @@ def Depends(dependency: Callable[..., Any]) -> Any:
     """
     setattr(dependency, '_is_dependency_marker', True)
     return dependency
+
+# --- MVVM/Advanced Feature Registrations ---
+try:
+    from ucore_framework.mvvm.data_provisioning import DataProvisioningMixin
+    from ucore_framework.mvvm.transformation_pipeline import TransformationPipelineMixin
+    from ucore_framework.mvvm.grouping_filter import GroupingFilterMixin
+    from ucore_framework.mvvm.data_provider import DataProviderPluginBase
+    container = Container()
+    container.register_instance(DataProvisioningMixin())
+    container.register_instance(TransformationPipelineMixin())
+    container.register_instance(GroupingFilterMixin())
+    container.register_instance(DataProviderPluginBase)
+except ImportError:
+    pass

@@ -2,10 +2,10 @@ import pytest
 import asyncio
 from unittest.mock import Mock, patch, AsyncMock
 import time
-from UCoreFrameworck.web.http import HttpServer
-from UCoreFrameworck.core.app import App
-from UCoreFrameworck.messaging.event_bus import EventBus
-from UCoreFrameworck.messaging.events import (
+from ucore_framework.web.http import HttpServer
+from ucore_framework.core.app import App
+from ucore_framework.messaging.event_bus import EventBus
+from ucore_framework.messaging.events import (
     HttpServerStartedEvent, HTTPRequestEvent, HTTPResponseEvent, HTTPErrorEvent
 )
 from aiohttp import web
@@ -460,7 +460,7 @@ class TestMetricsIntegration:
         mock_metrics_adapter_class.__instance__ = mock_metrics_instance
 
         # Patch isinstance to always return True for HTTPMetricsAdapter
-        import UCoreFrameworck.monitoring.metrics as metrics_mod
+        import ucore_framework.monitoring.metrics as metrics_mod
         orig_isinstance = isinstance
 
         def fake_isinstance(obj, typ):

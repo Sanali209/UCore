@@ -16,8 +16,8 @@ Requirements:
 import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
-from UCoreFrameworck.desktop.ui.pyside6_adapter import PySide6Adapter
-from UCoreFrameworck.desktop.ui.flet.flet_adapter import FletAdapter
+from ucore_framework.desktop.ui.pyside6_adapter import PySide6Adapter
+from ucore_framework.desktop.ui.flet.flet_adapter import FletAdapter
 from PySide6.QtWidgets import QWidget, QLabel, QVBoxLayout
 import qasync
 import asyncio

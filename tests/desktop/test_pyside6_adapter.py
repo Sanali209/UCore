@@ -8,7 +8,7 @@ import sys
 import asyncio
 import os
 from unittest.mock import Mock, patch, AsyncMock
-from UCoreFrameworck.desktop.ui.pyside6_adapter import PySide6Adapter
+from ucore_framework.desktop.ui.pyside6_adapter import PySide6Adapter
 
 
 class TestPySide6AdapterInitialization:
@@ -406,7 +406,7 @@ class TestIntegrationWithUCore:
     @pytest.mark.asyncio
     async def test_adapter_with_ucore_app(self):
         """Test adapter integration with UCore App."""
-        from UCoreFrameworck.core.app import App
+        from ucore_framework.core.app import App
 
         app = App("PySide6TestApp")
 
@@ -429,8 +429,8 @@ class TestIntegrationWithUCore:
 
     def test_container_integration(self):
         """Test container integration for dependency injection."""
-        from UCoreFrameworck.core.app import App
-        from UCoreFrameworck.core.di import Container
+        from ucore_framework.core.app import App
+        from ucore_framework.core.di import Container
 
         app = App("IntegrationTest")
 

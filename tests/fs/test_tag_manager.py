@@ -1,7 +1,7 @@
 import pytest
 import asyncio
-from UCoreFrameworck.fs.components.tags import TagManager
-from UCoreFrameworck.fs.models import TagRecord
+from ucore_framework.fs.components.tags import TagManager
+from ucore_framework.fs.models import TagRecord
 
 @pytest.mark.asyncio
 async def test_create_and_find_tag():

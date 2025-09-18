@@ -8,7 +8,7 @@ from pathlib import Path
 from unittest.mock import Mock, patch, AsyncMock, MagicMock, call
 from datetime import datetime
 
-from UCoreFrameworck.debug_utilities import (
+from ucore_framework.debug_utilities import (
     DebugMetrics, ComponentDebugger, EventInspector, PerformanceProfiler,
     init_debug_utilities, get_debug_metrics, get_component_debugger,
     get_event_inspector, get_performance_profiler, save_all_debug_reports,

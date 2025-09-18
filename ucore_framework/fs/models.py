@@ -1,4 +1,4 @@
-from UCoreFrameworck.data.mongo_orm import BaseMongoRecord, ReferenceField, Field
+from ucore_framework.data.mongo_orm import BaseMongoRecord, ReferenceField, Field
 from typing import Dict
 from datetime import datetime
 

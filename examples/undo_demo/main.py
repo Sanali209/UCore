@@ -2,7 +2,7 @@
 UCore Framework Example: Undo System
 
 This example demonstrates:
-- Usage of the undo/redo system from UCoreFrameworck.core.undo
+- Usage of the undo/redo system from ucore_framework.core.undo
 
 Usage:
     python -m examples.undo_demo.main
@@ -15,7 +15,7 @@ Requirements:
 import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
-from UCoreFrameworck.core.undo import UndoSystem
+from ucore_framework.core.undo import UndoSystem
 from loguru import logger
 
 def main():

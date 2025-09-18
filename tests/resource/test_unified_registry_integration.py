@@ -1,8 +1,8 @@
 
-from UCoreFrameworck.resource.manager import ResourceManager, Resource
-from UCoreFrameworck.resource.ucore_registry import UCoreResourceRegistry
-from UCoreFrameworck.resource.unified_registry import UnifiedResourceRegistry
-from UCoreFrameworck.resource.backend_provider import BackendProvider, ServiceBackend, RoundRobinPolicy
+from ucore_framework.resource.manager import ResourceManager, Resource
+from ucore_framework.resource.ucore_registry import UCoreResourceRegistry
+from ucore_framework.resource.unified_registry import UnifiedResourceRegistry
+from ucore_framework.resource.backend_provider import BackendProvider, ServiceBackend, RoundRobinPolicy
 
 class DummyResource(Resource):
     async def _initialize(self): pass
@@ -45,7 +45,7 @@ def test_registry_edge_cases():
     assert unified_registry.find(name="missing") == []
 
 def test_progress_manager_event_bus(monkeypatch):
-    from UCoreFrameworck.monitoring.progress import ProgressManager
+    from ucore_framework.monitoring.progress import ProgressManager
 
     events = []
     class DummyBus:

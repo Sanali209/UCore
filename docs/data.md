@@ -18,7 +18,7 @@ The data domain provides persistence and caching for UCore, including disk cache
 ## Usage Example
 
 ```python
-from UCoreFrameworck.data.disk_cache import DiskCacheAdapter
+from ucore_framework.data.disk_cache import DiskCacheAdapter
 
 cache = DiskCacheAdapter(app)
 ```
@@ -28,7 +28,7 @@ cache = DiskCacheAdapter(app)
 ## MongoDB ODM Example
 
 ```python
-from UCoreFrameworck.data.mongo_orm import BaseMongoRecord, Field
+from ucore_framework.data.mongo_orm import BaseMongoRecord, Field
 
 class User(BaseMongoRecord):
     collection_name = "users"

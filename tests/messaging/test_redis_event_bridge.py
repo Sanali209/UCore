@@ -4,10 +4,10 @@ import json
 from unittest.mock import Mock, AsyncMock, patch, MagicMock, call
 from datetime import datetime
 
-from UCoreFrameworck.messaging.redis_event_bridge import (
+from ucore_framework.messaging.redis_event_bridge import (
     EventBusToRedisBridge, RedisToEventBusBridge, EventBusRedisBridge
 )
-from UCoreFrameworck.messaging.events import AppStartedEvent, ComponentStartedEvent
+from ucore_framework.messaging.events import AppStartedEvent, ComponentStartedEvent
 
 
 class TestEventBusToRedisBridge:
@@ -310,7 +310,7 @@ class TestRedisAdapterEventBridgeIntegration:
 
     def setup_method(self):
         """Setup method for tests."""
-        from UCoreFrameworck.messaging.redis_adapter import RedisAdapter
+        from ucore_framework.messaging.redis_adapter import RedisAdapter
 
         self.app = Mock()
         self.app.container.get.side_effect = Exception("Config not found")
@@ -335,7 +335,7 @@ class TestRedisAdapterEventBridgeIntegration:
 
     def test_bridge_settings_override(self):
         """Test bridge settings override from config."""
-        from UCoreFrameworck.messaging.redis_adapter import RedisAdapter
+        from ucore_framework.messaging.redis_adapter import RedisAdapter
         # Create adapter with config that has bridge settings
         app_with_config = Mock()
         mock_config = Mock()

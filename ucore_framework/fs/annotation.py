@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from UCoreFrameworck.fs.models import AnnotationRecord, FileRecord
+from ucore_framework.fs.models import AnnotationRecord, FileRecord
 
 class AnnotationJob(ABC):
     """

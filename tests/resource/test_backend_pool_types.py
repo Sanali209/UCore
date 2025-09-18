@@ -1,7 +1,7 @@
 import pytest
-from UCoreFrameworck.resource.backend_provider import BackendProvider, ServiceBackend, BackendSelectionPolicy, RoundRobinPolicy, HealthBasedPolicy, TagBasedPolicy
-from UCoreFrameworck.resource.pool import PoolEntry, ResourcePool
-from UCoreFrameworck.resource.exceptions import (
+from ucore_framework.resource.backend_provider import BackendProvider, ServiceBackend, BackendSelectionPolicy, RoundRobinPolicy, HealthBasedPolicy, TagBasedPolicy
+from ucore_framework.resource.pool import PoolEntry, ResourcePool
+from ucore_framework.resource.exceptions import (
     ResourceError, ResourceNotFoundError, ResourcePoolExhaustedError, ResourceConnectionError,
     ResourceTimeoutError, ResourceConfigurationError, ResourceStateError
 )

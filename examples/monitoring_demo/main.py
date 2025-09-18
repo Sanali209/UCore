@@ -19,8 +19,8 @@ Demonstrates logging, metrics, observability, progress tracking, and event-drive
 from loguru import logger
 from tqdm import tqdm
 from prometheus_client import Counter
-from UCoreFrameworck.monitoring.progress import TqdmProgressVisualizer
-from UCoreFrameworck.messaging.event_bus import EventBus, Event
+from ucore_framework.monitoring.progress import TqdmProgressVisualizer
+from ucore_framework.messaging.event_bus import EventBus, Event
 import time
 
 class MetricUpdatedEvent(Event):

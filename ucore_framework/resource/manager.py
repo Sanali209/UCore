@@ -5,13 +5,13 @@ Central component for managing all resources in the framework
 
 import asyncio
 from loguru import logger
-from UCoreFrameworck.monitoring.progress import ProgressManager
+from ucore_framework.monitoring.progress import ProgressManager
 from typing import Any, Dict, List, Optional, Type
 from collections import defaultdict
 
 from .resource import Resource, ResourceHealth
 from .exceptions import ResourceNotFoundError, ResourceError
-from .events import ResourceEvent
+from ucore_framework.messaging.event_types import ResourceCreatedEvent, ResourceDeletedEvent, ResourceModifiedEvent, ResourceConnectionEvent
 
 
 import sys
@@ -192,11 +192,15 @@ class ResourceManager:
                 self.progress_manager.step(f"Failed {resource.name}")
 
         # Publish startup complete event
-        await self._publish_event("resources_started", {
-            "started_count": len(started_resources),
-            "failed_count": len(failed_resources),
-            "failed_resources": failed_resources
-        })
+        from ucore_framework.messaging.event_types import SystemStartedEvent
+        await self._publish_event(SystemStartedEvent(
+            source_component="ResourceManager",
+            metadata={
+                "started_count": len(started_resources),
+                "failed_count": len(failed_resources),
+                "failed_resources": failed_resources
+            }
+        ))
 
         self._is_started = True
 
@@ -242,9 +246,11 @@ class ResourceManager:
             logger.error(f"Resource shutdown timed out after {self._shutdown_timeout}s")
 
         # Publish shutdown complete event
-        await self._publish_event("resources_stopped", {
-            "shutdown_count": len(self._resources)
-        })
+        from ucore_framework.messaging.event_types import SystemShutdownEvent
+        await self._publish_event(SystemShutdownEvent(
+            source_component="ResourceManager",
+            reason="All resources stopped"
+        ))
 
         self._is_started = False
         self._is_shutting_down = False
@@ -322,7 +328,12 @@ class ResourceManager:
                         continue
                 self._last_health_check = asyncio.get_event_loop().time()
                 health_summary = await self.health_check_all()
-                await self._publish_event("health_update", health_summary)
+                from ucore_framework.messaging.event_types import ComponentHealthChangedEvent
+                await self._publish_event(ComponentHealthChangedEvent(
+                    component_name="ResourceManager",
+                    new_status="healthy" if health_summary["unhealthy_count"] == 0 else "unhealthy",
+                    health_details=health_summary
+                ))
                 unhealthy = [
                     f"{name}({info['health']})"
                     for name, info in health_summary["resources"].items()
@@ -335,26 +346,13 @@ class ResourceManager:
         except Exception as e:
             logger.error(f"Error in health monitor loop: {e}")
 
-    async def _publish_event(self, event_type: str, data: Dict[str, Any]) -> None:
-        """Publish manager event"""
+    async def _publish_event(self, event: Any) -> None:
+        """Publish a resource-related event."""
         if self.event_bus:
-            event = ResourceEvent(
-                resource_name="resource_manager",
-                resource_type="manager",
-                timestamp=asyncio.get_event_loop().time()
-            )
-            import inspect
-            if hasattr(self.event_bus, "publish_async"):
-                publish_async = self.event_bus.publish_async
-                # Handle unittest.mock.Mock or AsyncMock
-                if hasattr(publish_async, "_mock_name"):
-                    publish_async(f"resource.manager.{event_type}", event)
-                elif inspect.iscoroutinefunction(publish_async):
-                    await publish_async(f"resource.manager.{event_type}", event)
-                else:
-                    publish_async(f"resource.manager.{event_type}", event)
-            else:
-                await self.event_bus.publish(f"resource.manager.{event_type}", event)
+            try:
+                await self.event_bus.publish(event)
+            except Exception as e:
+                logger.error(f"Failed to publish event {type(event).__name__}: {e}")
 
     # Context manager support
     async def __aenter__(self):

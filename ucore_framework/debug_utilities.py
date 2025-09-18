@@ -5,7 +5,7 @@ Provides comprehensive debugging capabilities for framework components.
 
 import asyncio
 import json
-from UCoreFrameworck.monitoring.logging import Logging
+from ucore_framework.monitoring.logging import Logging
 import sys
 import time
 import traceback

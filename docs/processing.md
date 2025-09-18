@@ -18,7 +18,7 @@ The processing domain provides background task execution, CLI tools, worker mana
 ## Usage Example
 
 ```python
-from UCoreFrameworck.processing.tasks import TaskQueue
+from ucore_framework.processing.tasks import TaskQueue
 
 queue = TaskQueue(app)
 
@@ -56,4 +56,4 @@ ucore status
 ## See Also
 
 - [Project Structure Guide](project-structure-guide.md)
-- [UCore Framework Guide](ucore-UCoreFrameworck-guide.md)
+- [UCore Framework Guide](ucore-ucore_framework-guide.md)

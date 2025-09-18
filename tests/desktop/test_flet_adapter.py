@@ -8,7 +8,7 @@ import asyncio
 from unittest.mock import Mock, patch, AsyncMock, call
 import flet as ft
 
-from UCoreFrameworck.desktop.ui.flet.flet_adapter import FletAdapter
+from ucore_framework.desktop.ui.flet.flet_adapter import FletAdapter
 
 
 class TestFletAdapterInitialization:
@@ -237,7 +237,7 @@ class TestFletAdapterIntegration:
 
     def test_component_inheritance(self):
         """Test that FletAdapter properly inherits from Component."""
-        from UCoreFrameworck.core.component import Component
+        from ucore_framework.core.component import Component
 
         app = Mock()
         target_func = Mock()

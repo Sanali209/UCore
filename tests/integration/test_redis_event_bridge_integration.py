@@ -7,8 +7,8 @@ import pytest
 from loguru import logger
 from tqdm import tqdm
 
-from UCoreFrameworck.messaging.event_bus import EventBus, Event
-from UCoreFrameworck.messaging.redis_event_bridge import EventBusRedisBridge
+from ucore_framework.messaging.event_bus import EventBus, Event
+from ucore_framework.messaging.redis_event_bridge import EventBusRedisBridge
 
 class DummyEvent(Event):
     pass

@@ -7,9 +7,9 @@ UCore supports unified resource registration via the UnifiedResourceRegistry and
 ### Example Usage
 
 ```python
-from UCoreFrameworck.resource.manager import ResourceManager, Resource
-from UCoreFrameworck.resource.ucore_registry import UCoreResourceRegistry
-from UCoreFrameworck.resource.unified_registry import UnifiedResourceRegistry
+from ucore_framework.resource.manager import ResourceManager, Resource
+from ucore_framework.resource.ucore_registry import UCoreResourceRegistry
+from ucore_framework.resource.unified_registry import UnifiedResourceRegistry
 
 resource_manager = ResourceManager()
 ucore_registry = UCoreResourceRegistry(resource_manager)
@@ -27,8 +27,8 @@ BackendProvider supports policy-driven backend selection and can discover backen
 ### Example Usage
 
 ```python
-from UCoreFrameworck.resource.backend_provider import BackendProvider, ServiceBackend, RoundRobinPolicy
-from UCoreFrameworck.resource.unified_registry import UnifiedResourceRegistry
+from ucore_framework.resource.backend_provider import BackendProvider, ServiceBackend, RoundRobinPolicy
+from ucore_framework.resource.unified_registry import UnifiedResourceRegistry
 
 provider = BackendProvider(selection_policy=RoundRobinPolicy(), registry=unified_registry)
 backend = ServiceBackend(name="db1", tags=["db"])
@@ -43,7 +43,7 @@ SecretsManager provides secure access to secrets for configuration and resources
 ### Example Usage
 
 ```python
-from UCoreFrameworck.resource.secrets import EnvVarSecretsManager
+from ucore_framework.resource.secrets import EnvVarSecretsManager
 
 secrets = EnvVarSecretsManager()
 secrets.set_secret("MY_SECRET", "value")
@@ -68,7 +68,7 @@ UCore provides an `UndoSystem` component for undo/redo functionality, suitable f
 ### Usage Example
 
 ```python
-from UCoreFrameworck.core.undo import UndoSystem
+from ucore_framework.core.undo import UndoSystem
 
 undo_system = UndoSystem()
 undo_system.add_undo_item(lambda: print("undo!"), lambda: print("redo!"), description="Sample action")
@@ -87,7 +87,7 @@ UCore provides a `TimeMeasure` component for profiling and timing code execution
 ### Usage Example
 
 ```python
-from UCoreFrameworck.core.timemeasure import TimeMeasure
+from ucore_framework.core.timemeasure import TimeMeasure
 
 tm = TimeMeasure()
 tm.start_timer("mytask", step=2)

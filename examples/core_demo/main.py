@@ -4,10 +4,10 @@ UCore Framework Example: Core Features
 Demonstrates application/component system, dependency injection, configuration, and plugins.
 """
 
-from UCoreFrameworck.core.app import App
-from UCoreFrameworck.core.component import Component
-from UCoreFrameworck.core.config import Config
-from UCoreFrameworck.core.di import Container
+from ucore_framework.core.app import App
+from ucore_framework.core.component import Component
+from ucore_framework.core.config import Config
+from ucore_framework.core.di import Container
 import os
 
 class HelloService:

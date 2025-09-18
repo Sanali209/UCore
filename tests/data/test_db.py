@@ -8,7 +8,7 @@ import asyncio
 from unittest.mock import Mock, patch, AsyncMock, call, ANY
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import declarative_base
-from UCoreFrameworck.data.db import SQLAlchemyAdapter, Base
+from ucore_framework.data.db import SQLAlchemyAdapter, Base
 
 
 class TestSQLAlchemyAdapterInitialization:

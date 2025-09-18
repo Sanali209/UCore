@@ -15,8 +15,8 @@ Requirements:
 Demonstrates HTTP server functionality.
 """
 
-from UCoreFrameworck.web.http import HttpServer
-from UCoreFrameworck.core.app import App
+from ucore_framework.web.http import HttpServer
+from ucore_framework.core.app import App
 from aiohttp import web
 import asyncio
 

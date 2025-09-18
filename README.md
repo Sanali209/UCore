@@ -1,9 +1,19 @@
 # 🚀 UCore Framework
 
+## Advanced MVVM Features
+
+- MVVM base classes (ViewModelBase, ObservableList, Command)
+- DataTemplate & HierarchicalDataTemplate for dynamic GUI and tree/list views
+- Grouping, filtering, transformation pipelines, and flexible data provisioning
+- Async and plugin-based data providers
+- Monitoring/logging (loguru, tqdm), undo/redo, and event-driven updates
+- **PySide6 desktop UI:** ListViewWidget and TreeViewWidget with MVVM binding, dynamic templates, grouping/filtering/transformation, and provisioning
+- See `docs/mvvm_advanced_features.md`, `docs/mvvm_pyside6.md`, `docs/mvvm_usage_guide.md`, and `examples/mvvm_advanced_demo/` for usage, guides, and demos
+
 [![Python Version](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
-**UCore** is a modular, domain-driven, production-ready enterprise UCoreFrameworck for building modern, observable, and scalable Python services. It features a component-based architecture, strong OOP principles, and extensibility across 9 specialized domains.
+**UCore** is a modular, domain-driven, production-ready enterprise ucore_framework for building modern, observable, and scalable Python services. It features a component-based architecture, strong OOP principles, and extensibility across 9 specialized domains.
 
 ---
 
@@ -26,14 +36,14 @@
 
 ## 📁 Project Structure
 
-- `UCoreFrameworck/core`: App, Component, Config, DI, Plugins, Settings
-- `UCoreFrameworck/data`: DB, DiskCache, MongoDB Adapter/ORM
-- `UCoreFrameworck/desktop/ui`: FletAdapter, PySide6Adapter
-- `UCoreFrameworck/messaging`: Events, EventBus, RedisAdapter, Bridges
-- `UCoreFrameworck/monitoring`: Logging, Metrics, Observability
-- `UCoreFrameworck/processing`: TaskQueue, CLI, Worker, CPU tasks
-- `UCoreFrameworck/resource`: ResourceManager, Resource types, Pooling
-- `UCoreFrameworck/web`: HttpServer
+- `ucore_framework/core`: App, Component, Config, DI, Plugins, Settings
+- `ucore_framework/data`: DB, DiskCache, MongoDB Adapter/ORM
+- `ucore_framework/desktop/ui`: FletAdapter, PySide6Adapter
+- `ucore_framework/messaging`: Events, EventBus, RedisAdapter, Bridges
+- `ucore_framework/monitoring`: Logging, Metrics, Observability
+- `ucore_framework/processing`: TaskQueue, CLI, Worker, CPU tasks
+- `ucore_framework/resource`: ResourceManager, Resource types, Pooling
+- `ucore_framework/web`: HttpServer
 
 ---
 
@@ -56,8 +66,8 @@ pip install -r requirements.txt
 ### Minimal Example
 
 ```python
-from UCoreFrameworck import App
-from UCoreFrameworck.web import HttpServer
+from ucore_framework import App
+from ucore_framework.web import HttpServer
 
 app = App("MyService")
 http_server = HttpServer(app)
@@ -98,7 +108,7 @@ ucore shell
 ## 📝 Undo System Example
 
 ```python
-from UCoreFrameworck.core.undo import UndoSystem
+from ucore_framework.core.undo import UndoSystem
 
 undo_system = UndoSystem()
 undo_system.add_undo_item(lambda: print("undo!"), lambda: print("redo!"), description="Sample action")
@@ -115,6 +125,17 @@ undo_system.redo()
   ```bash
   python -m pytest tests/
   ```
+
+---
+
+## 🧪 Testing & Quality
+
+- Comprehensive unit and integration tests for all domains and MVVM features.
+- Run all tests:
+  ```bash
+  python -m pytest tests/
+  ```
+- See `tests/framework/test_framework_core.py` for framework-wide tests.
 
 ---
 
@@ -149,4 +170,5 @@ MIT License. See LICENSE for details.
 ## 📚 Documentation
 
 - See [`docs/index.md`](docs/index.md) for the full documentation index and all guides.
+- See [`docs/mvvm_usage_guide.md`](docs/mvvm_usage_guide.md) for a detailed MVVM usage guide.
 - Explore the [`examples/`](examples/) directory for runnable demos of all major features.

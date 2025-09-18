@@ -17,11 +17,11 @@ Requirements:
 Demonstrates unified resource management, event-driven patterns, and best practices.
 """
 
-from UCoreFrameworck.resource.manager import ResourceManager
-from UCoreFrameworck.resource.resource import Resource, ResourceHealth
-from UCoreFrameworck.resource.ucore_registry import UCoreResourceRegistry
-from UCoreFrameworck.resource.unified_registry import UnifiedResourceRegistry
-from UCoreFrameworck.messaging.event_bus import EventBus, Event
+from ucore_framework.resource.manager import ResourceManager
+from ucore_framework.resource.resource import Resource, ResourceHealth
+from ucore_framework.resource.ucore_registry import UCoreResourceRegistry
+from ucore_framework.resource.unified_registry import UnifiedResourceRegistry
+from ucore_framework.messaging.event_bus import EventBus, Event
 from loguru import logger
 from tqdm import tqdm
 import asyncio

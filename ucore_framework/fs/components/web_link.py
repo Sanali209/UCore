@@ -3,8 +3,8 @@ Web link management for files_db.
 Defines WebLinkRecord and related logic for web link entities.
 """
 
-from UCoreFrameworck.fs.models import CollectionRecord
-from UCoreFrameworck.data.mongo_orm import Field
+from ucore_framework.fs.models import CollectionRecord
+from ucore_framework.data.mongo_orm import Field
 
 class WebLinkRecord(CollectionRecord):
     """

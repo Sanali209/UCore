@@ -18,7 +18,7 @@ Demonstrates background tasks, CLI, CPU tasks, chains, and event-driven patterns
 
 from loguru import logger
 from tqdm import tqdm
-from UCoreFrameworck.messaging.event_bus import EventBus, Event
+from ucore_framework.messaging.event_bus import EventBus, Event
 import threading
 import time
 

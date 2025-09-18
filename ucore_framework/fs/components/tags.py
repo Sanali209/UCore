@@ -3,7 +3,7 @@ Tag management for files_db.
 Defines TagRecord and related logic for tag entities.
 """
 
-from UCoreFrameworck.fs.models import TagRecord
+from ucore_framework.fs.models import TagRecord
 from typing import List, Optional
 
 class TagManager:

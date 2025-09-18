@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from UCoreFrameworck.fs.models import FileRecord
+from ucore_framework.fs.models import FileRecord
 
 class Indexer(ABC):
     """

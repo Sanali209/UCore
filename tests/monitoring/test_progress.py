@@ -1,5 +1,5 @@
 import pytest
-from UCoreFrameworck.monitoring.progress import ProgressManager, TqdmProgressVisualizer, LoguruProgressVisualizer, ProgressVisualizer
+from ucore_framework.monitoring.progress import ProgressManager, TqdmProgressVisualizer, LoguruProgressVisualizer, ProgressVisualizer
 
 class DummyVisualizer(ProgressVisualizer):
     def __init__(self):

@@ -7,8 +7,8 @@ Demonstrates database access, disk cache, and MongoDB integration.
 import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
-from UCoreFrameworck.data.disk_cache import DiskCacheAdapter
-from UCoreFrameworck.data.mongo_adapter import MongoDBAdapter
+from ucore_framework.data.disk_cache import DiskCacheAdapter
+from ucore_framework.data.mongo_adapter import MongoDBAdapter
 
 class MockApp:
     def __init__(self):

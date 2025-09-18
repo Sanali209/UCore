@@ -17,10 +17,10 @@ import tempfile
 from pathlib import Path
 from typing import Dict, Any, Iterator, AsyncGenerator
 
-from UCoreFrameworck.core.app import App
-from UCoreFrameworck.core.config import Config
-from UCoreFrameworck.core.di import Container
-from UCoreFrameworck.messaging.events import Event, ComponentStartedEvent, ComponentStoppedEvent
+from ucore_framework.core.app import App
+from ucore_framework.core.config import Config
+from ucore_framework.core.di import Container
+from ucore_framework.messaging.events import Event, ComponentStartedEvent, ComponentStoppedEvent
 
 
 class TestApp(App):
@@ -36,8 +36,8 @@ class TestApp(App):
         self.test_data = {}
         # Register and start database adapters for integration tests
         try:
-            from UCoreFrameworck.data.db import SQLAlchemyAdapter
-            from UCoreFrameworck.data.mongo_adapter import MongoDBAdapter
+            from ucore_framework.data.db import SQLAlchemyAdapter
+            from ucore_framework.data.mongo_adapter import MongoDBAdapter
             self.container.register(SQLAlchemyAdapter)
             self.container.register(MongoDBAdapter)
             # Instantiate and start adapters so they appear in _components

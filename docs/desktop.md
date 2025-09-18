@@ -16,7 +16,7 @@ The desktop domain provides UI integration for desktop applications, supporting 
 ## Usage Example
 
 ```python
-from UCoreFrameworck.desktop.ui.flet.flet_adapter import FletAdapter
+from ucore_framework.desktop.ui.flet.flet_adapter import FletAdapter
 
 flet_adapter = FletAdapter(app, target_func=my_ui_func, port=8085)
 ```
@@ -26,7 +26,7 @@ flet_adapter = FletAdapter(app, target_func=my_ui_func, port=8085)
 ## PySide6 Example
 
 ```python
-from UCoreFrameworck.desktop.ui.pyside6_adapter import PySide6Adapter
+from ucore_framework.desktop.ui.pyside6_adapter import PySide6Adapter
 
 pyside_adapter = PySide6Adapter(app)
 ```
@@ -50,4 +50,4 @@ pyside_adapter = PySide6Adapter(app)
 ## See Also
 
 - [Project Structure Guide](project-structure-guide.md)
-- [UCore Framework Guide](ucore-UCoreFrameworck-guide.md)
+- [UCore Framework Guide](ucore-ucore_framework-guide.md)

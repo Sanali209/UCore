@@ -2,11 +2,11 @@ import pytest
 import asyncio
 from unittest.mock import Mock, patch, AsyncMock
 from aiohttp import web
-from UCoreFrameworck.monitoring.metrics import HTTPMetricsAdapter, Counter, Histogram, Gauge
+from ucore_framework.monitoring.metrics import HTTPMetricsAdapter, Counter, Histogram, Gauge
 import prometheus_client
 from prometheus_client import CollectorRegistry
-from UCoreFrameworck.core.app import App
-from UCoreFrameworck.monitoring.logging import Logging
+from ucore_framework.core.app import App
+from ucore_framework.monitoring.logging import Logging
 
 
 class TestHTTPMetricsAdapterInitialization:

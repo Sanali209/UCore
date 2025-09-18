@@ -11,7 +11,7 @@ from bson import ObjectId
 
 # Import for event handling (will be available when integrated)
 try:
-    from UCoreFrameworck.messaging.events import (
+    from ucore_framework.messaging.events import (
         BaseEvent, DocumentDeletedEvent,
         DocumentCreatedEvent, DocumentUpdatedEvent
     )

@@ -8,7 +8,7 @@ import os
 import tempfile
 import yaml
 from unittest.mock import patch, mock_open
-from UCoreFrameworck.core.config import Config
+from ucore_framework.core.config import Config
 
 
 class TestConfigInitialization:

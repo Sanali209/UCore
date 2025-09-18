@@ -9,7 +9,7 @@ from unittest.mock import Mock, AsyncMock, patch
 from bson import ObjectId
 import threading
 
-from UCoreFrameworck.data.mongo_orm import (
+from ucore_framework.data.mongo_orm import (
     ReferenceField, LazyReference, ReferenceListField,
     Field, LRUCache, DbRecordMeta, BaseMongoRecord,
     DocumentCreatedEvent, DocumentDeletedEvent, DocumentUpdatedEvent

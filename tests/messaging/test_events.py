@@ -8,7 +8,7 @@ import uuid
 from datetime import datetime
 from unittest.mock import Mock, patch
 
-from UCoreFrameworck.messaging.events import (
+from ucore_framework.messaging.events import (
     Event, ComponentStartedEvent, ComponentStoppedEvent, ComponentErrorEvent,
     HttpServerStartedEvent, HTTPRequestEvent, HTTPResponseEvent, HTTPErrorEvent,
     DBConnectionEvent, DBQueryEvent, DBTransactionEvent, DBPoolEvent,

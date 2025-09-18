@@ -1,9 +1,18 @@
 # UCore Documentation Index
 
-Welcome to the UCore documentation. This index provides an overview of all available guides and documentation for the UCoreFrameworck.
+## Advanced MVVM Features
+
+- MVVM base classes (ViewModelBase, ObservableList, Command)
+- DataTemplate & HierarchicalDataTemplate for dynamic GUI and tree/list views
+- Grouping, filtering, transformation pipelines, and flexible data provisioning
+- Async and plugin-based data providers
+- Monitoring/logging (loguru, tqdm), undo/redo, and event-driven updates
+- See `docs/mvvm_advanced_features.md` and `examples/mvvm_advanced_demo/` for usage
+
+Welcome to the UCore documentation. This index provides an overview of all available guides and documentation for the ucore_framework.
 
 ## Getting Started
-- [UCore Framework Guide](ucore-UCoreFrameworck-guide.md)
+- [UCore Framework Guide](ucore-ucore_framework-guide.md)
 - [Project Structure Guide](project-structure-guide.md)
 - [Domain-Driven Architecture](domain-driven-architecture.md)
 

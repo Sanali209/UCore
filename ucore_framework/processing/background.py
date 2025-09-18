@@ -66,7 +66,7 @@ class TaskQueueAdapter(Component):
 
         # Try to import and initialize tasks module
         try:
-            import UCoreFrameworck.processing.tasks
+            import ucore_framework.processing.tasks
             # This will trigger any @task decorators in the module
             self.app.logger.info("Framework tasks module loaded")
         except ImportError:

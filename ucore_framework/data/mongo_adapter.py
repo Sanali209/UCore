@@ -7,9 +7,9 @@ from typing import Type
 from motor.motor_asyncio import AsyncIOMotorClient
 from diskcache import Index
 
-from UCoreFrameworck.core.component import Component
-from UCoreFrameworck.core.config import Config
-from UCoreFrameworck.data.mongo_orm import BaseMongoRecord
+from ucore_framework.core.component import Component
+from ucore_framework.core.config import Config
+from ucore_framework.data.mongo_orm import BaseMongoRecord
 
 
 class MongoDBAdapter(Component):

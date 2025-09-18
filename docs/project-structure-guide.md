@@ -6,8 +6,8 @@ This guide explains the directory and module structure of UCore, and how to navi
 
 ## Top-Level Structure
 
-- `UCoreFrameworck/` — Main UCoreFrameworck code, organized by domain (core, data, desktop, messaging, monitoring, processing, resource, web)
-- `tests/` — Unit and integration tests, mirroring the UCoreFrameworck structure
+- `ucore_framework/` — Main ucore_framework code, organized by domain (core, data, desktop, messaging, monitoring, processing, resource, web)
+- `tests/` — Unit and integration tests, mirroring the ucore_framework structure
 - `docs/` — Documentation and guides
 - `examples/` — Example projects and usage demos
 - `plugins/` — Example plugins
@@ -16,37 +16,37 @@ This guide explains the directory and module structure of UCore, and how to navi
 
 ## Key Directories
 
-### UCoreFrameworck/core
+### ucore_framework/core
 - App orchestration, component system, DI, config, plugins, settings
 
-### UCoreFrameworck/data
+### ucore_framework/data
 - SQLAlchemy DB, disk cache, MongoDB ODM, data view models
 
-### UCoreFrameworck/desktop
+### ucore_framework/desktop
 - UI adapters for Flet (web) and PySide6 (desktop/Qt)
 
-### UCoreFrameworck/messaging
+### ucore_framework/messaging
 - EventBus, event types, Redis adapter, distributed event bridge
 
-### UCoreFrameworck/monitoring
+### ucore_framework/monitoring
 - Logging (loguru), Prometheus metrics, observability, health checks, tracing
 
-### UCoreFrameworck/processing
+### ucore_framework/processing
 - Task queue, CLI, worker management, CPU task adapters
 
-### UCoreFrameworck/resource
+### ucore_framework/resource
 - ResourceManager, resource types, pooling, health monitoring
 
-### UCoreFrameworck/web
+### ucore_framework/web
 - HttpServer, routing, middleware, async endpoints
 
 ---
 
 ## Extending the Project
 
-- Add new domains as subdirectories in `UCoreFrameworck/`
+- Add new domains as subdirectories in `ucore_framework/`
 - Implement new components by subclassing `Component`
-- Register plugins in `UCoreFrameworck/core/plugins.py`
+- Register plugins in `ucore_framework/core/plugins.py`
 - Add tests in the corresponding `tests/` subdirectory
 
 ---
@@ -54,7 +54,7 @@ This guide explains the directory and module structure of UCore, and how to navi
 ## Example: Adding a New Component
 
 ```python
-from UCoreFrameworck.core.component import Component
+from ucore_framework.core.component import Component
 
 class MyComponent(Component):
     def start(self):
@@ -65,5 +65,5 @@ class MyComponent(Component):
 
 ## See Also
 
-- [UCore Framework Guide](ucore-UCoreFrameworck-guide.md)
+- [UCore Framework Guide](ucore-ucore_framework-guide.md)
 - [Domain-Driven Architecture](domain-driven-architecture.md)

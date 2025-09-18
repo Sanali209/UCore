@@ -20,7 +20,7 @@ from .pyside6_adapter import PySide6Adapter
 
 # Try to import MongoDB-integrated version
 try:
-    from UCoreFrameworck.data.mongo_list_view_model import MongoHierarchicalDataViewModel
+    from ucore_framework.data.mongo_list_view_model import MongoHierarchicalDataViewModel
     MONGO_AVAILABLE = True
 except ImportError:
     MONGO_AVAILABLE = False

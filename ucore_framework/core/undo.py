@@ -1,4 +1,4 @@
-from UCoreFrameworck.core.component import Component
+from ucore_framework.core.component import Component
 from typing import Callable, List, Optional
 from loguru import logger
 

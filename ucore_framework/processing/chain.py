@@ -9,7 +9,7 @@ Classes:
     - DictFieldMergeChainFunction: Merges multiple fields into one.
 
 Example usage:
-    from UCoreFrameworck.processing.chain import DictFormatterChainFunction, PrintToChainFunction
+    from ucore_framework.processing.chain import DictFormatterChainFunction, PrintToChainFunction
 
     formatter = DictFormatterChainFunction()
     formatter.mapping = {"full_name": ["first_name", "last_name"]}

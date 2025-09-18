@@ -3,7 +3,7 @@ Relation management for files_db.
 Defines RelationRecord and hooks for managing relationships between records.
 """
 
-from UCoreFrameworck.data.mongo_orm import BaseMongoRecord, Field, ReferenceField
+from ucore_framework.data.mongo_orm import BaseMongoRecord, Field, ReferenceField
 
 class RelationRecord(BaseMongoRecord):
     """

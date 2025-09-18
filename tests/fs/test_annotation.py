@@ -1,6 +1,6 @@
 import pytest
 import asyncio
-from UCoreFrameworck.fs.annotation import AnnotationJob, register_annotation_job, get_annotation_job
+from ucore_framework.fs.annotation import AnnotationJob, register_annotation_job, get_annotation_job
 
 class DummyAnnotationJob(AnnotationJob):
     async def run(self, file_record, annotation_data):

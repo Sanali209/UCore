@@ -2,7 +2,7 @@
 UCore Framework Example: Disk Cache
 
 This example demonstrates:
-- Usage of the disk cache system from UCoreFrameworck.data.disk_cache
+- Usage of the disk cache system from ucore_framework.data.disk_cache
 
 Usage:
     python -m examples.disk_cache_demo.main
@@ -15,7 +15,7 @@ Requirements:
 import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
-from UCoreFrameworck.data.disk_cache import DiskCacheAdapter
+from ucore_framework.data.disk_cache import DiskCacheAdapter
 from loguru import logger
 
 class DummyApp:

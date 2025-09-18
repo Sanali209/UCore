@@ -8,7 +8,7 @@ Requirements:
 
 import time
 import threading
-from UCoreFrameworck.core.timemeasure import TimeMeasure
+from ucore_framework.core.timemeasure import TimeMeasure
 
 from prometheus_client import start_http_server
 

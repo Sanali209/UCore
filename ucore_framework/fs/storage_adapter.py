@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
-from UCoreFrameworck.fs.models import FileRecord
-from UCoreFrameworck.data.mongo_adapter import MongoDBAdapter
+from ucore_framework.fs.models import FileRecord
+from ucore_framework.data.mongo_adapter import MongoDBAdapter
 
 from typing import Any
 

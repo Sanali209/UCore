@@ -4,9 +4,9 @@ UCore Framework Example: Messaging Features
 Demonstrates event bus, events, and Redis integration.
 """
 
-from UCoreFrameworck.messaging.event_bus import EventBus
-from UCoreFrameworck.messaging.events import Event
-from UCoreFrameworck.messaging.redis_adapter import RedisAdapter
+from ucore_framework.messaging.event_bus import EventBus
+from ucore_framework.messaging.events import Event
+from ucore_framework.messaging.redis_adapter import RedisAdapter
 
 class MyEvent(Event):
     def __init__(self, message):

@@ -1,6 +1,6 @@
 import pytest
 import asyncio
-from UCoreFrameworck.fs.components.web_link import WebLinkRecord
+from ucore_framework.fs.components.web_link import WebLinkRecord
 
 @pytest.mark.asyncio
 async def test_create_web_link_record():

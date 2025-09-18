@@ -1,5 +1,5 @@
 import pytest
-from UCoreFrameworck.core.undo import UndoSystem
+from ucore_framework.core.undo import UndoSystem
 
 def test_undo_redo_basic():
     result = []

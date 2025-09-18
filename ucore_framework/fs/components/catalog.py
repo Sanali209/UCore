@@ -3,7 +3,7 @@ Catalog management for files_db.
 Defines CatalogRecord and related logic for catalog entities.
 """
 
-from UCoreFrameworck.fs.models import CatalogRecord
+from ucore_framework.fs.models import CatalogRecord
 from typing import List, Optional
 
 class CatalogManager:

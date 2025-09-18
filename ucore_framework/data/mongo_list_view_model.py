@@ -21,11 +21,11 @@ import asyncio
 import weakref
 from pathlib import Path
 
-from UCoreFrameworck.core.component import Component
-from UCoreFrameworck.messaging.event_bus import EventBus
-from UCoreFrameworck.desktop.ui.list_item_factory import ListItemFactory, ListItemType, ListItem
-from UCoreFrameworck.data.mongo_orm import BaseMongoRecord, Field, ReferenceField, ReferenceListField
-from UCoreFrameworck.messaging.photo_events import (
+from ucore_framework.core.component import Component
+from ucore_framework.messaging.event_bus import EventBus
+from ucore_framework.desktop.ui.list_item_factory import ListItemFactory, ListItemType, ListItem
+from ucore_framework.data.mongo_orm import BaseMongoRecord, Field, ReferenceField, ReferenceListField
+from ucore_framework.messaging.photo_events import (
     PhotoAddedEvent,
     PhotoDeletedEvent,
     PhotoUpdatedEvent,
@@ -211,7 +211,7 @@ class MongoHierarchicalDataViewModel(Component):
     def _setup_event_subscriptions(self) -> None:
         """Setup comprehensive event subscriptions."""
         try:
-            from UCoreFrameworck.messaging.photo_events import (
+            from ucore_framework.messaging.photo_events import (
                 PhotoAddedEvent,
                 PhotoDeletedEvent,
                 PhotoUpdatedEvent,

@@ -11,7 +11,7 @@ from redis.exceptions import ConnectionError, TimeoutError
 
 # Remove global Redis patching fixture to avoid double-mocking issues
 
-from UCoreFrameworck.messaging.redis_event_bridge import EventBusRedisBridge, EventBusToRedisBridge, RedisToEventBusBridge
+from ucore_framework.messaging.redis_event_bridge import EventBusRedisBridge, EventBusToRedisBridge, RedisToEventBusBridge
 
 
 class TestRedisAdapterInitialization:
@@ -19,7 +19,7 @@ class TestRedisAdapterInitialization:
 
     def test_init_default_config(self):
         """Test initialization with default configuration fallback."""
-        from UCoreFrameworck.messaging.redis_adapter import RedisAdapter
+        from ucore_framework.messaging.redis_adapter import RedisAdapter
         app = Mock()
 
         # Mock config registration to fail
@@ -39,7 +39,7 @@ class TestRedisAdapterInitialization:
 
     def test_init_with_config(self):
         """Test initialization with configuration service."""
-        from UCoreFrameworck.messaging.redis_adapter import RedisAdapter
+        from ucore_framework.messaging.redis_adapter import RedisAdapter
         app = Mock()
         mock_config = Mock()
         mock_config.get.side_effect = lambda key, default=None: {
@@ -59,7 +59,7 @@ class TestRedisAdapterInitialization:
 
     def test_bridge_settings_loading(self):
         """Test loading bridge settings from configuration."""
-        from UCoreFrameworck.messaging.redis_adapter import RedisAdapter
+        from ucore_framework.messaging.redis_adapter import RedisAdapter
         app = Mock()
         app.container.get.side_effect = Exception("Config not found")
 
@@ -73,8 +73,8 @@ class TestRedisAdapterInitialization:
 
     def test_component_inheritance(self):
         """Test that RedisAdapter properly inherits from required classes."""
-        from UCoreFrameworck.core.component import Component
-        from UCoreFrameworck.messaging.redis_adapter import RedisAdapter
+        from ucore_framework.core.component import Component
+        from ucore_framework.messaging.redis_adapter import RedisAdapter
 
         app = Mock()
         app.container.get.side_effect = Exception("Config not found")
@@ -105,7 +105,7 @@ class TestRedisAdapterLifecycle:
         mock_redis_asyncio = types.SimpleNamespace(Redis=mock_redis_class)
 
         with patch.dict('sys.modules', {'redis.asyncio': mock_redis_asyncio}), patch('asyncio.create_task'):
-            from UCoreFrameworck.messaging.redis_adapter import RedisAdapter
+            from ucore_framework.messaging.redis_adapter import RedisAdapter
 
             app = Mock()
             logger = Mock()
@@ -137,7 +137,7 @@ class TestRedisAdapterLifecycle:
     @patch('redis.asyncio.Redis')
     async def test_start_with_connection_failure(self, mock_redis_class):
         """Test start with Redis connection failure."""
-        from UCoreFrameworck.messaging.redis_adapter import RedisAdapter
+        from ucore_framework.messaging.redis_adapter import RedisAdapter
         app = Mock()
         logger = Mock()
         app.logger = logger
@@ -155,7 +155,7 @@ class TestRedisAdapterLifecycle:
     @pytest.mark.asyncio
     async def test_stop_success(self):
         """Test successful shutdown."""
-        from UCoreFrameworck.messaging.redis_adapter import RedisAdapter
+        from ucore_framework.messaging.redis_adapter import RedisAdapter
         app = Mock()
         logger = Mock()
         app.logger = logger
@@ -181,7 +181,7 @@ class TestRedisAdapterPubSubOperations:
 
     def test_subscribe_decorator(self):
         """Test subscribe decorator registration."""
-        from UCoreFrameworck.messaging.redis_adapter import RedisAdapter
+        from ucore_framework.messaging.redis_adapter import RedisAdapter
         app = Mock()
         app.container.get.side_effect = Exception("Config not found")
 
@@ -197,7 +197,7 @@ class TestRedisAdapterPubSubOperations:
     @pytest.mark.asyncio
     async def test_publish_success(self):
         """Test successful message publishing."""
-        from UCoreFrameworck.messaging.redis_adapter import RedisAdapter
+        from ucore_framework.messaging.redis_adapter import RedisAdapter
         app = Mock()
         app.container.get.side_effect = Exception("Config not found")
 
@@ -213,7 +213,7 @@ class TestRedisAdapterPubSubOperations:
     @pytest.mark.asyncio
     async def test_publish_failure(self):
         """Test publish failure."""
-        from UCoreFrameworck.messaging.redis_adapter import RedisAdapter
+        from ucore_framework.messaging.redis_adapter import RedisAdapter
         app = Mock()
         logger = Mock()
         app.logger = logger
@@ -231,7 +231,7 @@ class TestRedisAdapterPubSubOperations:
     @pytest.mark.asyncio
     async def test_publish_without_redis_connection(self):
         """Test publish without Redis connection."""
-        from UCoreFrameworck.messaging.redis_adapter import RedisAdapter
+        from ucore_framework.messaging.redis_adapter import RedisAdapter
         app = Mock()
         app.container.get.side_effect = Exception("Config not found")
 
@@ -244,7 +244,7 @@ class TestRedisAdapterPubSubOperations:
     @pytest.mark.asyncio
     async def test_subscribe_channel_processing(self):
         """Test channel subscription and message processing."""
-        from UCoreFrameworck.messaging.redis_adapter import RedisAdapter
+        from ucore_framework.messaging.redis_adapter import RedisAdapter
         app = Mock()
         logger = Mock()
         app.logger = logger
@@ -281,7 +281,7 @@ class TestRedisAdapterPubSubOperations:
     @pytest.mark.asyncio
     async def test_subscribe_channel_json_error_handling(self):
         """Test channel subscription with JSON parsing error."""
-        from UCoreFrameworck.messaging.redis_adapter import RedisAdapter
+        from ucore_framework.messaging.redis_adapter import RedisAdapter
         app = Mock()
         logger = Mock()
         app.logger = logger
@@ -317,7 +317,7 @@ class TestRedisAdapterStreamOperations:
 
     def test_subscribe_stream_decorator(self):
         """Test stream subscription decorator."""
-        from UCoreFrameworck.messaging.redis_adapter import RedisAdapter
+        from ucore_framework.messaging.redis_adapter import RedisAdapter
         app = Mock()
         app.container.get.side_effect = Exception("Config not found")
 
@@ -333,7 +333,7 @@ class TestRedisAdapterStreamOperations:
     @pytest.mark.asyncio
     async def test_publish_to_stream_success(self):
         """Test successful publishing to stream."""
-        from UCoreFrameworck.messaging.redis_adapter import RedisAdapter
+        from ucore_framework.messaging.redis_adapter import RedisAdapter
         app = Mock()
         app.container.get.side_effect = Exception("Config not found")
 
@@ -349,7 +349,7 @@ class TestRedisAdapterStreamOperations:
     @pytest.mark.asyncio
     async def test_publish_to_stream_with_max_length(self):
         """Test publishing to stream with max length."""
-        from UCoreFrameworck.messaging.redis_adapter import RedisAdapter
+        from ucore_framework.messaging.redis_adapter import RedisAdapter
         app = Mock()
         app.container.get.side_effect = Exception("Config not found")
 
@@ -365,7 +365,7 @@ class TestRedisAdapterStreamOperations:
     @pytest.mark.asyncio
     async def test_publish_to_stream_without_redis(self):
         """Test publishing to stream without Redis connection."""
-        from UCoreFrameworck.messaging.redis_adapter import RedisAdapter
+        from ucore_framework.messaging.redis_adapter import RedisAdapter
         app = Mock()
         app.container.get.side_effect = Exception("Config not found")
 
@@ -382,7 +382,7 @@ class TestRedisAdapterUtilityOperations:
     @pytest.mark.asyncio
     async def test_get_success(self):
         """Test successful get operation."""
-        from UCoreFrameworck.messaging.redis_adapter import RedisAdapter
+        from ucore_framework.messaging.redis_adapter import RedisAdapter
         app = Mock()
         app.container.get.side_effect = Exception("Config not found")
 
@@ -398,7 +398,7 @@ class TestRedisAdapterUtilityOperations:
     @pytest.mark.asyncio
     async def test_get_string_value(self):
         """Test get operation with plain string value."""
-        from UCoreFrameworck.messaging.redis_adapter import RedisAdapter
+        from ucore_framework.messaging.redis_adapter import RedisAdapter
         app = Mock()
         app.container.get.side_effect = Exception("Config not found")
 
@@ -413,7 +413,7 @@ class TestRedisAdapterUtilityOperations:
     @pytest.mark.asyncio
     async def test_get_nonexistent_key(self):
         """Test get operation for non-existent key."""
-        from UCoreFrameworck.messaging.redis_adapter import RedisAdapter
+        from ucore_framework.messaging.redis_adapter import RedisAdapter
         app = Mock()
         app.container.get.side_effect = Exception("Config not found")
 
@@ -428,7 +428,7 @@ class TestRedisAdapterUtilityOperations:
     @pytest.mark.asyncio
     async def test_set_success(self):
         """Test successful set operation."""
-        from UCoreFrameworck.messaging.redis_adapter import RedisAdapter
+        from ucore_framework.messaging.redis_adapter import RedisAdapter
         app = Mock()
         app.container.get.side_effect = Exception("Config not found")
 
@@ -444,7 +444,7 @@ class TestRedisAdapterUtilityOperations:
     @pytest.mark.asyncio
     async def test_set_with_ttl(self):
         """Test set operation with TTL (time-to-live)."""
-        from UCoreFrameworck.messaging.redis_adapter import RedisAdapter
+        from ucore_framework.messaging.redis_adapter import RedisAdapter
         app = Mock()
         app.container.get.side_effect = Exception("Config not found")
 
@@ -460,7 +460,7 @@ class TestRedisAdapterUtilityOperations:
     @pytest.mark.asyncio
     async def test_set_failure(self):
         """Test set operation failure."""
-        from UCoreFrameworck.messaging.redis_adapter import RedisAdapter
+        from ucore_framework.messaging.redis_adapter import RedisAdapter
         app = Mock()
         logger = Mock()
         app.logger = logger
@@ -478,7 +478,7 @@ class TestRedisAdapterUtilityOperations:
     @pytest.mark.asyncio
     async def test_set_without_redis_connection(self):
         """Test set without Redis connection."""
-        from UCoreFrameworck.messaging.redis_adapter import RedisAdapter
+        from ucore_framework.messaging.redis_adapter import RedisAdapter
         app = Mock()
         app.container.get.side_effect = Exception("Config not found")
 
@@ -491,7 +491,7 @@ class TestRedisAdapterUtilityOperations:
     @pytest.mark.asyncio
     async def test_delete_success(self):
         """Test successful delete operation."""
-        from UCoreFrameworck.messaging.redis_adapter import RedisAdapter
+        from ucore_framework.messaging.redis_adapter import RedisAdapter
         app = Mock()
         app.container.get.side_effect = Exception("Config not found")
 
@@ -507,7 +507,7 @@ class TestRedisAdapterUtilityOperations:
     @pytest.mark.asyncio
     async def test_delete_without_redis_connection(self):
         """Test delete without Redis connection."""
-        from UCoreFrameworck.messaging.redis_adapter import RedisAdapter
+        from ucore_framework.messaging.redis_adapter import RedisAdapter
         app = Mock()
         app.container.get.side_effect = Exception("Config not found")
 
@@ -520,7 +520,7 @@ class TestRedisAdapterUtilityOperations:
     @pytest.mark.asyncio
     async def test_get_without_redis_connection(self):
         """Test get without Redis connection."""
-        from UCoreFrameworck.messaging.redis_adapter import RedisAdapter
+        from ucore_framework.messaging.redis_adapter import RedisAdapter
         app = Mock()
         app.container.get.side_effect = Exception("Config not found")
 
@@ -536,7 +536,7 @@ class TestRedisAdapterClientIPExtraction:
 
     def test_get_client_ip_x_forwarded_for(self):
         """Test IP extraction from X-Forwarded-For header."""
-        from UCoreFrameworck.messaging.redis_adapter import RedisAdapter
+        from ucore_framework.messaging.redis_adapter import RedisAdapter
         app = Mock()
         app.container.get.side_effect = Exception("Config not found")
 
@@ -551,7 +551,7 @@ class TestRedisAdapterClientIPExtraction:
 
     def test_get_client_ip_x_real_ip(self):
         """Test IP extraction from X-Real-IP header."""
-        from UCoreFrameworck.messaging.redis_adapter import RedisAdapter
+        from ucore_framework.messaging.redis_adapter import RedisAdapter
         app = Mock()
         app.container.get.side_effect = Exception("Config not found")
 
@@ -566,7 +566,7 @@ class TestRedisAdapterClientIPExtraction:
 
     def test_get_client_ip_cf_connecting_ip(self):
         """Test IP extraction from Cloudflare header."""
-        from UCoreFrameworck.messaging.redis_adapter import RedisAdapter
+        from ucore_framework.messaging.redis_adapter import RedisAdapter
         app = Mock()
         app.container.get.side_effect = Exception("Config not found")
 
@@ -581,7 +581,7 @@ class TestRedisAdapterClientIPExtraction:
 
     def test_get_client_ip_multiple_headers(self):
         """Test IP extraction when multiple headers are present."""
-        from UCoreFrameworck.messaging.redis_adapter import RedisAdapter
+        from ucore_framework.messaging.redis_adapter import RedisAdapter
         app = Mock()
         app.container.get.side_effect = Exception("Config not found")
 
@@ -601,7 +601,7 @@ class TestRedisAdapterClientIPExtraction:
 
     def test_get_client_ip_fallback_to_remote(self):
         """Test IP fallback to remote address."""
-        from UCoreFrameworck.messaging.redis_adapter import RedisAdapter
+        from ucore_framework.messaging.redis_adapter import RedisAdapter
         app = Mock()
         app.container.get.side_effect = Exception("Config not found")
 
@@ -617,7 +617,7 @@ class TestRedisAdapterClientIPExtraction:
 
     def test_get_client_ip_no_headers_no_remote(self):
         """Test IP extraction when no headers and no remote address."""
-        from UCoreFrameworck.messaging.redis_adapter import RedisAdapter
+        from ucore_framework.messaging.redis_adapter import RedisAdapter
         app = Mock()
         app.container.get.side_effect = Exception("Config not found")
 
@@ -633,7 +633,7 @@ class TestRedisAdapterClientIPExtraction:
 
     def test_get_client_ip_empty_x_forwarded_for(self):
         """Test IP extraction from empty X-Forwarded-For header."""
-        from UCoreFrameworck.messaging.redis_adapter import RedisAdapter
+        from ucore_framework.messaging.redis_adapter import RedisAdapter
         app = Mock()
         app.container.get.side_effect = Exception("Config not found")
 

@@ -7,9 +7,9 @@ import pytest
 import asyncio
 from unittest.mock import Mock, MagicMock, patch, AsyncMock
 import tempfile
-from UCoreFrameworck.data.mongo_adapter import MongoDBAdapter
-from UCoreFrameworck.core.app import App
-from UCoreFrameworck.core.config import Config
+from ucore_framework.data.mongo_adapter import MongoDBAdapter
+from ucore_framework.core.app import App
+from ucore_framework.core.config import Config
 
 
 class TestMongoDBAdapterInitialization:
