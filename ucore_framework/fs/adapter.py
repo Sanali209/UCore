@@ -29,5 +29,5 @@ class FileSystemAdapter(ABC):
     def copy_file(self, src: str, dst: str):
         pass
 
-# DEPRECATED: Use ucore_framework.resource.types.file.FileSystem and its providers for all file system operations.
+# DEPRECATED: Use ucore_framework.core.resource.types.file.FileSystem and its providers for all file system operations.
 # All adapter registration and lookup should go through the FileSystem service.

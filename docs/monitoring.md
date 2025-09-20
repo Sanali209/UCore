@@ -1,69 +1,99 @@
-# Monitoring Domain Guide
+# Monitoring & Observability
 
-## Purpose
-
-The monitoring domain provides observability features for UCore, including logging, metrics, health checks, and tracing.
+This section documents the monitoring, health checks, metrics, tracing, and logging capabilities of UCore.
 
 ---
 
-## Main Classes & Components
+## Overview
 
-- `Logging`: Structured logging using loguru.
-- `Metrics`: Prometheus-compatible metrics (counters, histograms, gauges).
-- `Observability`: Tracing and distributed tracing hooks.
-- `Health`: Health check endpoints and status reporting.
+UCore provides built-in monitoring and observability features to ensure application health, performance, and reliability.
+
+- Health checks for core services and resources
+- Metrics collection and reporting
+- Distributed tracing support
+- Structured logging with loguru
 
 ---
 
-## Usage Example
+## Key Components
 
-```python
-from loguru import logger
-logger.info("Service started")
+- **HealthChecker:**  
+  Periodically checks the health of resources and components.
 
-from ucore_framework.monitoring.metrics import counter
+- **MetricsCollector:**  
+  Collects and aggregates metrics (counters, gauges, histograms).
 
-@counter("my_counter", "Example counter")
-def my_function():
-    ...
-```
+- **TracingProvider:**  
+  Integrates with distributed tracing systems.
+
+- **Logger (loguru):**  
+  Structured, async-safe logging for all modules.
 
 ---
 
 ## Health Checks
 
-- Built-in `/health` endpoint for liveness/readiness.
-- Health status for all components and resources.
+Health checks are performed on resources (e.g., database, file system) and core components.
+
+```python
+from ucore_framework.monitoring.health_checker import HealthChecker
+
+checker = HealthChecker(resources=[db_resource, files_db])
+await checker.run_checks()
+```
+
+---
+
+## Metrics
+
+Metrics can be collected and reported for performance monitoring.
+
+```python
+from ucore_framework.monitoring.metrics import MetricsCollector
+
+metrics = MetricsCollector()
+metrics.increment("files_uploaded")
+metrics.observe("db_query_time", 0.123)
+```
 
 ---
 
 ## Tracing
 
-```python
-from ucore_framework.monitoring.observability import trace_function
+Distributed tracing is supported for tracking requests and operations across services.
 
-@trace_function("my_operation")
-def do_work():
-    ...
+```python
+from ucore_framework.monitoring.tracing_provider import TracingProvider
+
+tracer = TracingProvider()
+with tracer.start_span("process_file"):
+    # do work
+    pass
 ```
 
 ---
 
-## Extensibility & OOP
+## Logging
 
-- Add custom metrics and health checks.
-- Integrate tracing with OpenTelemetry.
+All modules use `loguru` for structured logging.
+
+```python
+from loguru import logger
+
+logger.info("Application started")
+logger.error("An error occurred", exc_info=True)
+```
 
 ---
 
-## Integration Points
+## Best Practices
 
-- Used by all domains for logging, metrics, and health.
-- Metrics and health endpoints are exposed via web server.
+- Integrate health checks into your deployment pipeline.
+- Use metrics and tracing to identify bottlenecks and failures.
+- Configure loguru for file, console, or remote logging as needed.
 
 ---
 
-## See Also
-
-- [Monitoring & Debugging Guide](monitoring-debugging-guide.md)
-- [Project Structure Guide](project-structure-guide.md)
+See also:  
+- [Core Framework](core.md)  
+- [File System Resource Management](fs.md)

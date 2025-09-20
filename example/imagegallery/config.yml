@@ -1,0 +1,7 @@
+database:
+  mongodb:
+    url: "mongodb://localhost:27017/imagegallery"
+
+CELERY_BROKER_URL: "redis://localhost:6379/0"
+
+HTTP_PORT: 8888

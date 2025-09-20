@@ -5,7 +5,7 @@ Provides comprehensive debugging capabilities for framework components.
 
 import asyncio
 import json
-from ucore_framework.monitoring.logging import Logging
+from loguru import logger
 import sys
 import time
 import traceback
@@ -70,7 +70,7 @@ class ComponentDebugger:
     """Debugger for framework components with lifecycle tracing."""
 
     def __init__(self, logger: Optional[Any] = None):
-        self.logger = logger or Logging().get_logger(__name__)
+        self.logger = logger or logger.bind(component="DebugUtilities")
         self.traced_components = {}
         self.event_history = []
         self._tracing_enabled = True

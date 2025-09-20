@@ -1,6 +1,9 @@
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, TypeVar, Generic
 from loguru import logger
+
+T = TypeVar('T')
+ModelType = TypeVar('ModelType')
 
 class PropertyChangedEvent:
     def __init__(self):
@@ -16,15 +19,15 @@ class PropertyChangedEvent:
         for handler in self._handlers:
             handler(property_name, old_value, new_value)
 
-class ModelBase(ABC):
+class ModelBase(Generic[T], ABC):
     """Base class for data models in MVVM."""
     pass
 
-class ViewModelBase(ABC):
+class ViewModelBase(Generic[T], ABC):
     """Base class for ViewModels with property change notification and command support."""
     def __init__(self):
         self._property_changed = PropertyChangedEvent()
-        self._properties: Dict[str, Any] = {}
+        self._properties: Dict[str, T] = {}
 
     def add_property_changed_handler(self, handler: Callable[[str, Any, Any], None]):
         self._property_changed.add(handler)
@@ -100,6 +103,15 @@ class ObservableDict(dict):
         value = self[key]
         super().__delitem__(key)
         self.notify('delete', key, value)
+
+class ViewModel(Generic[ModelType]):
+    """Generic ViewModel base class enforcing model type."""
+    def __init__(self, model: ModelType):
+        self._model = model
+
+    @property
+    def model(self) -> ModelType:
+        return self._model
 
 class ViewBase(ABC):
     """Base class for Views, to be implemented for each UI framework."""

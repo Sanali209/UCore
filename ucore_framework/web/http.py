@@ -5,15 +5,15 @@ import time
 from aiohttp import web
 from ..core.component import Component
 from ..core.di import Depends
-from ..messaging.events import HttpServerStartedEvent, HTTPRequestEvent, HTTPResponseEvent, HTTPErrorEvent
+from ..core.event_types import HttpServerStartedEvent, HTTPRequestEvent, HTTPResponseEvent, HTTPErrorEvent
 from typing import Dict, Any, Optional
 
 class HttpServer(Component):
     """
     An HTTP server component using aiohttp that supports dependency injection.
     """
-    def __init__(self, app=None, host: str = "0.0.0.0", port: int = 8080):
-        self.app = app
+    def __init__(self, app=None, host: str = "127.0.0.1", port: int = 8080):
+        super().__init__(app)  # Initialize the Component base class
         self.host = host
         self.port = port
 

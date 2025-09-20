@@ -215,6 +215,21 @@ class PluginRegistry:
         except Exception as e:
             logger.error(f"Failed to instantiate plugin '{name}': {e}")
             return None
+    
+    def get_plugins_by_capability(self, capability: str, enabled_only: bool = True) -> List[PluginEntry]:
+        """Get all plugins that support a specific capability."""
+        plugin_names = self._plugins_by_capability.get(capability, [])
+        plugins = [self._plugins[name] for name in plugin_names]
+        
+        if enabled_only:
+            plugins = [p for p in plugins if p.metadata.enabled]
+        
+        return plugins
+    
+    @property
+    def plugins(self) -> Dict[str, PluginEntry]:
+        """Get all registered plugins."""
+        return self._plugins.copy()
 
 
 class PluginManager:

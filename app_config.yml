@@ -1,4 +1,4 @@
-app_name: DuckDuckGo Search
+app_name: Deep Debug Example
 download_directory: C:\Users\User\Downloads\duckduckgo_images
 log_level: INFO
 max_results: 200

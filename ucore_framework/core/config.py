@@ -1,171 +1,269 @@
 """
-Unified Configuration Management for UCore Framework
+Unified Configuration and Settings Management for UCore Framework
 
-This module provides a centralized configuration management system that can merge
-settings from multiple YAML files and environment variables.
+This module provides a centralized configuration and settings management system:
+- Unified YAML-based config/settings loading and saving
+- Environment variable overrides
+- Runtime change callbacks for settings
+- Thread safety
+- App-specific helpers (window geometry, download directory, etc.)
+- OOP, extensibility, and loguru for logging
+
+Usage:
+    from ucore_framework.core.config import ConfigManager, get_config, set_config_value
+
+    config = get_config()
+    value = config.get("some_key")
+    config.set("some_key", "new_value")
+    # Legacy Config class is removed; use ConfigManager everywhere.
 """
 
 import os
 import yaml
-from typing import Any, Dict, Optional, List, Union
+from typing import Any, Dict, Callable, Optional, List, Union
 from pathlib import Path
+import threading
 from loguru import logger
+from pydantic import BaseModel, Field
+from ucore_framework.core.resource.secrets import EnhancedSecretsManager
 
+class ConfigSchema(BaseModel):
+    """
+    Pydantic schema for application configuration.
 
-class Config:
+    Attributes:
+        app_name: Application name.
+        version: Application version.
+        download_directory: Default download directory.
+        recent_directories: List of recently used directories.
+        max_results: Maximum number of results to fetch.
+        workers: Number of worker threads.
+        timeout: Default timeout for operations.
+        log_level: Logging level.
+        window_geometry: Window geometry settings (width, height, x, y).
     """
-    Unified configuration class that loads from multiple YAML files and environment variables.
-    
-    Features:
-    - Multiple YAML configuration files with deep merging
-    - Environment variable overrides with nested key support
-    - Type casting for environment variables
-    - Secrets manager integration
-    - Global instance management
+    app_name: str = Field(default="DuckDuckGo Search")
+    version: str = Field(default="1.0.0")
+    download_directory: str = Field(default_factory=lambda: str(Path.home() / "Downloads" / "duckduckgo_images"))
+    recent_directories: List[str] = Field(default_factory=list)
+    max_results: int = 200
+    workers: int = 4
+    timeout: float = 30.0
+    log_level: str = "INFO"
+    window_geometry: Dict[str, int] = Field(default_factory=lambda: {"width": 1200, "height": 800, "x": 100, "y": 100})
+
+class ConfigManager:
     """
-    def __init__(self, env_prefix: str = "UCORE", env_separator: str = "_", base_dir: Optional[Union[str, Path]] = None):
-        self.data: Dict[str, Any] = {}
+    Unified configuration and settings manager for UCore.
+
+    Responsibilities:
+        - Load and merge configuration from YAML files and environment variables
+        - Provide runtime change callbacks and thread safety
+        - Validate configuration using Pydantic schemas
+        - Support app-specific helpers (window geometry, download directory, etc.)
+        - Integrate with secrets manager for secure values
+
+    Example:
+        config = ConfigManager()
+        value = config.get("app_name")
+        config.set("workers", 8)
+        config.save()
+    """
+    def __init__(self, config_files: Optional[Union[str, List[str]]] = None, env_prefix: str = "UCORE", env_separator: str = "_"):
         self.env_prefix = env_prefix
         self.env_separator = env_separator
-        self.base_dir = Path(base_dir) if base_dir else Path.cwd()
-
-    def load_from_files(self, filepaths: List[str]) -> None:
-        """
-        Loads configuration from multiple YAML files in order.
-        Later files override earlier ones with deep merging.
-        """
-        for filepath in filepaths:
-            self.load_from_file(filepath)
-    
-    def load_from_file(self, filepath: str) -> None:
-        """
-        Loads configuration from a single YAML file.
-        Merges dictionaries recursively instead of shallow update.
-        """
-        config_path = self.base_dir / filepath if not Path(filepath).is_absolute() else Path(filepath)
+        self._lock = threading.RLock()
+        self._callbacks: Dict[str, List[Callable]] = {}
+        self._data: Dict[str, Any] = {}
         
+        # Handle both single string and list of config files
+        if config_files is None:
+            self.config_files = [
+                "app_config.yml",
+                "config.yml",
+                "custom_settings.yml"
+            ]
+        elif isinstance(config_files, str):
+            self.config_files = [config_files]
+        else:
+            self.config_files = config_files
+            
+        self._load_all()
+
+    def _load_all(self):
+        self._load_from_files(self.config_files)
+        self._load_from_env()
+        self._load_defaults_if_needed()
+        # --- Inject secrets from EnhancedSecretsManager if alias keys are present ---
+        secrets_manager = EnhancedSecretsManager()
+        # Example: secret_key_alias, database_url_alias
+        for secret_field in ["secret_key", "database_url"]:
+            alias_key = f"{secret_field}_alias"
+            if alias_key in self._data:
+                secret_value = secrets_manager.get_secret(self._data[alias_key])
+                if secret_value:
+                    self._data[secret_field] = secret_value
+                else:
+                    logger.error(f"Failed to retrieve secret for alias '{self._data[alias_key]}'")
+        # Validate and store as ConfigSchema
         try:
-            if config_path.exists():
-                with open(config_path, 'r', encoding='utf-8') as f:
-                    file_config = yaml.safe_load(f) or {}
-                self._deep_merge(self.data, file_config)
-                logger.info(f"Loaded configuration from {config_path}")
-            else:
-                logger.debug(f"Configuration file {config_path} not found, skipping")
-        except yaml.YAMLError as e:
-            logger.error(f"Error parsing YAML file {config_path}: {e}")
-            raise RuntimeError(f"Error parsing YAML file {config_path}: {e}") from e
+            from ucore_framework.core.validation import ConfigModel
+            self.validated_config = ConfigModel(**self._data)
         except Exception as e:
-            logger.error(f"Error loading configuration from {config_path}: {e}")
-            raise RuntimeError(f"Error loading configuration from {config_path}: {e}") from e
+            logger.error(f"Configuration validation failed: {e}")
+            raise SystemExit("Exiting due to invalid configuration.")
+        self._schema = ConfigSchema(**self._data)
 
-    def load_from_env(self) -> None:
-        """
-        Loads configuration from environment variables, overriding existing values.
-        Nested keys can be specified using a separator (e.g., UCORE_DATABASE_HOST).
-        """
+    def _load_from_files(self, filepaths: List[str]):
+        for filepath in filepaths:
+            config_path = Path(filepath)
+            try:
+                if config_path.exists():
+                    with open(config_path, 'r', encoding='utf-8') as f:
+                        file_config = yaml.safe_load(f) or {}
+                    self._deep_merge(self._data, file_config)
+                    logger.info(f"Loaded configuration from {config_path}")
+                else:
+                    logger.debug(f"Configuration file {config_path} not found, skipping")
+            except yaml.YAMLError as e:
+                logger.error(f"Error parsing YAML file {config_path}: {e}")
+            except Exception as e:
+                logger.error(f"Error loading configuration from {config_path}: {e}")
+
+    def _load_from_env(self):
         prefix = f"{self.env_prefix}{self.env_separator}"
-        
-        try:
-            from ucore_framework.resource.secrets import EnvVarSecretsManager
-            secrets_manager = EnvVarSecretsManager()
-        except ImportError:
-            secrets_manager = None
-            logger.debug("SecretsManager not available, using direct environment access")
-        
         for key, value in os.environ.items():
             if key.startswith(prefix):
-                # Remove prefix and split into nested keys
                 config_key = key[len(prefix):].lower()
-                keys = config_key.split(self.env_separator)
-                
-                # Use SecretsManager for secret-like keys if available
-                if secrets_manager and any(s in key.lower() for s in ["secret", "password", "key"]):
-                    secret_value = secrets_manager.get_secret(key)
-                    parsed_value = self._cast_value(secret_value) if secret_value is not None else self._cast_value(value)
-                else:
-                    parsed_value = self._cast_value(value)
-                
-                self._set_nested(self.data, keys, parsed_value)
+                # For simple keys like UCORE_MAX_RESULTS -> max_results, don't split further
+                # Only split if there are nested separators beyond the main one
+                self._data[config_key] = self._cast_value(value)
 
-    def get(self, key: str, default: Optional[Any] = None) -> Any:
-        """
-        Retrieves a configuration value using dot notation for nested keys.
-        """
-        keys = key.split('.')
-        value = self.data
+    def _load_defaults_if_needed(self):
+        defaults = {
+            "app_name": "DuckDuckGo Search",
+            "version": "1.0.0",
+            "download_directory": str(Path.home() / "Downloads" / "duckduckgo_images"),
+            "recent_directories": [],
+            "max_results": 200,
+            "workers": 4,
+            "timeout": 30.0,
+            "log_level": "INFO",
+            "window_geometry": {
+                "width": 1200,
+                "height": 800,
+                "x": 100,
+                "y": 100
+            },
+        }
+        for key, value in defaults.items():
+            if key not in self._data:
+                self._data[key] = value
+
+    def get(self, key: str, default: Any = None) -> Any:
+        with self._lock:
+            # Prefer schema attribute if available
+            if hasattr(self, "_schema") and hasattr(self._schema, key):
+                return getattr(self._schema, key)
+            return self._data.get(key, default)
+
+    def set(self, key: str, value: Any, save_immediately: bool = True):
+        with self._lock:
+            old_value = self._data.get(key)
+            if old_value != value:
+                self._data[key] = value
+                # Update schema if possible
+                if hasattr(self, "_schema") and hasattr(self._schema, key):
+                    setattr(self._schema, key, value)
+                if save_immediately:
+                    self.save()
+                if key in self._callbacks:
+                    for callback in self._callbacks[key]:
+                        try:
+                            callback(key, value, old_value)
+                        except Exception as e:
+                            logger.warning(f"Settings callback error for {key}: {e}")
+                logger.info(f"Setting updated: {key} = {value}")
+
+    def subscribe(self, key: str, callback: Callable) -> bool:
+        with self._lock:
+            if key not in self._callbacks:
+                self._callbacks[key] = []
+            self._callbacks[key].append(callback)
+            return True
+
+    def unsubscribe(self, key: str, callback: Callable) -> bool:
+        with self._lock:
+            if key in self._callbacks and callback in self._callbacks[key]:
+                self._callbacks[key].remove(callback)
+                return True
+            return False
+
+    def save(self) -> bool:
         try:
-            for k in keys:
-                value = value[k]
-            return value
-        except (KeyError, TypeError):
-            return default
-
-    def set(self, key: str, value: Any) -> None:
-        """
-        Sets a configuration value using dot notation for nested keys.
-        If key is empty, replaces the entire config data.
-        """
-        if not key:
-            self.data = value
-        else:
-            keys = key.split('.')
-            self._set_nested(self.data, keys, value)
-
-    def load_unified_config(self, 
-                          config_files: Optional[List[str]] = None,
-                          include_env: bool = True) -> Dict[str, Any]:
-        """
-        Load and merge configuration from all sources.
-        
-        Args:
-            config_files: List of config files to load. Defaults to standard files.
-            include_env: Whether to include environment variable overrides
-            
-        Returns:
-            Unified configuration dictionary
-        """
-        if config_files is None:
-            config_files = [
-                'app_config.yml',
-                'config.yml', 
-                'custom_settings.yml'
-            ]
-        
-        # Load from files
-        self.load_from_files(config_files)
-        
-        # Override with environment variables if requested
-        if include_env:
-            self.load_from_env()
-        
-        logger.info(f"Unified configuration loaded with {len(self.data)} top-level keys")
-        return self.data
-
-    def load_from_dict(self, config_dict: dict) -> None:
-        """
-        Loads configuration from a provided dictionary, merging recursively.
-        """
-        self._deep_merge(self.data, config_dict)
-
-    def save_to_file(self, filepath: str) -> None:
-        """
-        Saves the current configuration to a YAML file.
-        """
-        try:
-            with open(filepath, 'w') as f:
-                yaml.dump(self.data, f, default_flow_style=False, allow_unicode=True)
+            with self._lock:
+                # Save to the first config file
+                config_path = Path(self.config_files[0])
+                with open(config_path, 'w', encoding='utf-8') as f:
+                    yaml.safe_dump(self._data, f, default_flow_style=False, allow_unicode=True)
+                logger.info(f"Settings saved to {config_path}")
+                return True
         except Exception as e:
-            raise RuntimeError(f"Error saving configuration to {filepath}: {e}") from e
+            logger.error(f"Failed to save settings: {e}")
+            return False
 
-    def to_dict(self) -> Dict[str, Any]:
-        """Get the complete configuration as a dictionary."""
-        return self.data.copy()
-    
+    def reload(self) -> bool:
+        try:
+            with self._lock:
+                self._data.clear()
+                self._load_all()
+                # Re-validate schema after reload
+                self._schema = ConfigSchema(**self._data)
+            logger.info("Settings reloaded from YAML and environment")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to reload settings: {e}")
+            return False
+
+    def get_all(self) -> Dict:
+        with self._lock:
+            return self._data.copy()
+
+    # App-specific helpers
+    def get_download_directory(self) -> str:
+        return self.get("download_directory")
+
+    def set_download_directory(self, directory: str):
+        if os.path.isdir(directory):
+            self.set("download_directory", directory)
+            recent = self.get("recent_directories", [])
+            if directory in recent:
+                recent.remove(directory)
+            recent.insert(0, directory)
+            recent = recent[:10]
+            self.set("recent_directories", recent)
+            return True
+        return False
+
+    def get_recent_directories(self) -> list:
+        return self.get("recent_directories", [])
+
+    def get_window_geometry(self) -> Dict:
+        return self.get("window_geometry", {"width": 1200, "height": 800, "x": 100, "y": 100})
+
+    def set_window_geometry(self, geometry: Dict):
+        self.set("window_geometry", geometry)
+
+    def create_download_subdir(self, query: str) -> str:
+        base_dir = self.get_download_directory()
+        safe_name = "".join(c if c.isalnum() or c in " -_" else "_" for c in query)
+        safe_name = safe_name[:50]
+        download_dir = os.path.join(base_dir, safe_name)
+        os.makedirs(download_dir, exist_ok=True)
+        return download_dir
+
+    # Internal helpers
     def _deep_merge(self, dict1: Dict[str, Any], dict2: Dict[str, Any]) -> None:
-        """
-        Deep merge dict2 into dict1, with dict2 taking precedence.
-        """
         for key, value in dict2.items():
             if key in dict1 and isinstance(dict1[key], dict) and isinstance(value, dict):
                 self._deep_merge(dict1[key], value)
@@ -173,28 +271,18 @@ class Config:
                 dict1[key] = value
 
     def _set_nested(self, data: Dict, keys: list, value: Any) -> None:
-        """
-        Helper to set a value in a nested dictionary.
-        """
         for key in keys[:-1]:
             data = data.setdefault(key, {})
         data[keys[-1]] = value
 
     @staticmethod
     def _cast_value(value: str) -> Any:
-        """
-        Automatically casts a string value to a more specific type if possible.
-        """
         if not isinstance(value, str):
             return value
-            
-        # Handle boolean values
         if value.lower() in ('true', 'yes', '1', 'on'):
             return True
         elif value.lower() in ('false', 'no', '0', 'off'):
             return False
-        
-        # Try to parse as number
         try:
             if '.' in value:
                 return float(value)
@@ -202,60 +290,44 @@ class Config:
                 return int(value)
         except ValueError:
             pass
-        
         return value
 
-
 # Global instance for easy access
-_global_config: Optional[Config] = None
+_global_config: Optional[ConfigManager] = None
 
+def get_config() -> ConfigManager:
+    """
+    Get the global ConfigManager instance.
 
-def get_config() -> Config:
-    """Get the global Config instance."""
+    Returns:
+        ConfigManager: The global configuration manager.
+    """
     global _global_config
     if _global_config is None:
-        _global_config = Config()
+        _global_config = ConfigManager()
     return _global_config
 
-
-def load_unified_config(config_files: Optional[List[str]] = None, 
-                       include_env: bool = True) -> Dict[str, Any]:
+def set_config_value(key: str, value: Any):
     """
-    Convenience function to load unified configuration.
-    
+    Set a configuration value globally.
+
     Args:
-        config_files: List of config files to load
-        include_env: Whether to include environment variables
-        
+        key: Configuration key.
+        value: Value to set.
+    """
+    config = get_config()
+    config.set(key, value)
+
+def get_config_value(key: str, default: Any = None) -> Any:
+    """
+    Get a configuration value globally.
+
+    Args:
+        key: Configuration key.
+        default: Default value if key is not found.
+
     Returns:
-        Unified configuration dictionary
+        The configuration value or default.
     """
     config = get_config()
-    return config.load_unified_config(config_files, include_env)
-
-
-def get_config_value(key_path: str, default: Any = None) -> Any:
-    """
-    Convenience function to get a configuration value.
-    
-    Args:
-        key_path: Dot-separated path to the configuration key
-        default: Default value if key is not found
-        
-    Returns:
-        Configuration value or default
-    """
-    config = get_config()
-    return config.get(key_path, default)
-
-
-def set_config_value(key_path: str, value: Any) -> None:
-    """
-    Convenience function to set a configuration value.
-    
-    Args:
-        key_path: Dot-separated path to the configuration key
-        value: Value to set
-    """
-    config = get_config()
-    config.set(key_path, value)
+    return config.get(key, default)

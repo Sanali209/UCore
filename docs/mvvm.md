@@ -1,61 +1,91 @@
-# ucore_framework MVVM Abstraction Guide
+# MVVM & UI Utilities
+
+This section documents the MVVM (Model-View-ViewModel) and UI helper modules in UCore, supporting desktop and UI-driven applications.
+
+---
 
 ## Overview
 
-This guide describes the MVVM (Model-View-ViewModel) abstraction layer in ucore_framework, designed for extensibility, modularity, and OOP best practices.
+UCore provides utilities for building desktop and UI applications using the MVVM pattern.  
+Features include:
+- Observable models and viewmodels
+- Data binding and transformation pipelines
+- UI adapters for PySide6 and other frameworks
+- Plugin support for UI components
 
-## Core Components
+---
 
-### ModelBase
-Base class for data models. Extend this for your domain data.
+## Key Components
 
-### ViewModelBase
-- Property change notification (observer pattern)
-- Command pattern support
-- Property storage and access
+- **BaseViewModel:**  
+  Base class for observable viewmodels.
 
-#### Example:
+- **DataProvider, DataProvisioning:**  
+  Classes for providing and transforming data to the UI.
+
+- **TransformationPipeline:**  
+  Compose data transformations for UI binding.
+
+- **PySide6Adapter:**  
+  Integration layer for PySide6-based UIs.
+
+- **PluginTemplate, AbstractViews:**  
+  Templates and abstractions for custom UI plugins.
+
+---
+
+## Usage Example
+
 ```python
-from ucore_framework.mvvm.base import ViewModelBase
+from ucore_framework.mvvm.base import BaseViewModel
 
-class MyViewModel(ViewModelBase):
+class CounterViewModel(BaseViewModel):
     def __init__(self):
         super().__init__()
-        self.set_property("counter", 0)
+        self.count = 0
 
     def increment(self):
-        self.set_property("counter", self.get_property("counter") + 1)
+        self.count += 1
+        self.notify_observers("count")
 ```
 
-### Command
-Abstract base for actions that can be bound to UI events.
+Bind this viewmodel to a UI using the provided adapters.
 
-### ObservableList / ObservableDict
-- List/dict with change notification for UI binding
+---
 
-#### Example:
+## Data Binding and Transformation
+
+Use `DataProvider` and `TransformationPipeline` to bind and transform data for the UI.
+
 ```python
-from ucore_framework.mvvm.base import ObservableList
+from ucore_framework.mvvm.data_provider import DataProvider
+from ucore_framework.mvvm.transformation_pipeline import TransformationPipeline
 
-items = ObservableList()
-def on_change(action, value):
-    print(f"Action: {action}, Value: {value}")
-items.add_handler(on_change)
-items.append("item1")
+provider = DataProvider(source=my_model)
+pipeline = TransformationPipeline([lambda x: x * 2])
+provider.set_pipeline(pipeline)
 ```
 
-### ViewBase
-Abstract base for UI views. Implement for your UI framework (e.g., PySide6).
+---
 
-## Usage Pattern
+## UI Adapters
 
-1. Define your Model, ViewModel, and View (subclassing the base classes).
-2. Use property change and observable collections for data binding.
-3. Implement commands for user actions.
-4. Bind ViewModel to View using the framework's helpers.
+- **PySide6Adapter:**  
+  Connects viewmodels to PySide6 widgets for reactive UIs.
 
-## Next Steps
+- **FletAdapter:**  
+  (If available) Adapter for Flet-based UIs.
 
-- See PySide6 realization for concrete UI binding examples.
-- Extend ViewBase for your UI toolkit.
-- Integrate with plugin and event bus systems for full app extensibility.
+---
+
+## Extending MVVM Utilities
+
+- Create new viewmodels by subclassing `BaseViewModel`.
+- Implement custom data providers and transformation steps.
+- Add new UI adapters for other frameworks as needed.
+
+---
+
+See also:  
+- [Core Framework](core.md)  
+- [Examples](examples.md)

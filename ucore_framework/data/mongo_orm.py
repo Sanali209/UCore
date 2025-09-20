@@ -1,7 +1,32 @@
-# framework/data/mongo_orm.py
 """
-This module provides the BaseMongoRecord class and related utilities,
-forming the core of the UCore MongoDB ODM.
+MongoDB ODM core utilities for UCore Framework.
+
+This module provides:
+- BaseMongoRecord: Core ODM base class for MongoDB models
+- ReferenceField, ReferenceListField: Reference field descriptors for relations
+- Field: Descriptor for model fields with type conversion and validation
+- LRUCache: Simple LRU cache for instance management
+- DbRecordMeta: Metaclass implementing Identity Map and schema caching
+
+Classes:
+    BaseMongoRecord: Base class for all MongoDB models in UCore.
+    ReferenceField: Descriptor for single-document references.
+    ReferenceListField: Descriptor for multi-document references.
+    Field: Descriptor for model fields.
+    LRUCache: Simple LRU cache for instances.
+    DbRecordMeta: Metaclass for BaseMongoRecord.
+
+Usage:
+    from ucore_framework.data.mongo_orm import BaseMongoRecord, Field, ReferenceField
+
+    class User(BaseMongoRecord):
+        collection_name = "users"
+        name = Field(str)
+        email = Field(str)
+        group = ReferenceField(Group)
+
+    await User.new_record(name="Alice", email="alice@example.com")
+    user = await User.get_by_id(user_id)
 """
 import threading
 import weakref
@@ -11,7 +36,7 @@ from bson import ObjectId
 
 # Import for event handling (will be available when integrated)
 try:
-    from ucore_framework.messaging.events import (
+    from ucore_framework.core.resource.events import (
         BaseEvent, DocumentDeletedEvent,
         DocumentCreatedEvent, DocumentUpdatedEvent
     )
@@ -55,24 +80,23 @@ BaseMongoRecord = None
 
 
 # Reference Field Implementation
+from typing import Type, Optional, Any
+
 class ReferenceField:
     """A field that references another document in a different collection."""
 
-    # Class-level LRU cache for LazyReference objects (prevent garbage collection)
-    _global_ref_cache = {}  # Use regular dict to prevent GC
+    _global_ref_cache: dict = {}  # Use regular dict to prevent GC
 
-    def __init__(self, referenced_model: Type[BaseMongoRecord]):
-        self.referenced_model = referenced_model
+    def __init__(self, referenced_model: Type["BaseMongoRecord"]) -> None:
+        self.referenced_model: Type["BaseMongoRecord"] = referenced_model
 
-    def __get__(self, instance, owner):
+    def __get__(self, instance: Optional["BaseMongoRecord"], owner: Any) -> Optional["LazyReference"]:
         if instance is None:
             return self
 
-        # Defensive: referenced_model may be a Mock in tests, fallback to str if __name__ missing
-        model_name = getattr(self.referenced_model, "__name__", str(self.referenced_model))
-        reference_id = instance.get_field_val(f"{model_name.lower()}_id")
+        model_name: str = getattr(self.referenced_model, "__name__", str(self.referenced_model))
+        reference_id: Any = instance.get_field_val(f"{model_name.lower()}_id")
 
-        # Return None if no reference ID is set
         if not reference_id:
             return None
 
@@ -83,52 +107,53 @@ class ReferenceField:
 
         return ReferenceField._global_ref_cache[cache_key]
 
-    def __set__(self, instance, value):
+    def __set__(self, instance: "BaseMongoRecord", value: Any) -> None:
         if value is None:
             instance.set_field_val(f"{self.referenced_model.__name__.lower()}_id", None)
         elif hasattr(value, '_id') and value._id:
             instance.set_field_val(f"{self.referenced_model.__name__.lower()}_id", value._id)
         else:
-            # Assume it's an ObjectId
             instance.set_field_val(f"{self.referenced_model.__name__.lower()}_id", ObjectId(value))
 
 
+from typing import Optional
+
 class LazyReference:
     """A lazy-loading proxy for referenced documents."""
-    def __init__(self, reference_id: ObjectId, referenced_model: Type[BaseMongoRecord]):
-        self.reference_id = reference_id
-        self.referenced_model = referenced_model
-        self._loaded_document = None
+    def __init__(self, reference_id: ObjectId, referenced_model: Type["BaseMongoRecord"]) -> None:
+        self.reference_id: ObjectId = reference_id
+        self.referenced_model: Type["BaseMongoRecord"] = referenced_model
+        self._loaded_document: Optional["BaseMongoRecord"] = None
 
-    async def fetch(self):
+    async def fetch(self) -> Optional["BaseMongoRecord"]:
         """Fetch the referenced document from the database."""
         if self._loaded_document is None:
             self._loaded_document = await self.referenced_model.get_by_id(self.reference_id)
         return self._loaded_document
 
     @property
-    def id(self):
+    def id(self) -> ObjectId:
         """Get the referenced document ID."""
         return self.reference_id
 
 
+from typing import List
+
 class ReferenceListField:
     """A field that references multiple documents in a different collection."""
-    def __init__(self, referenced_model: Type[BaseMongoRecord]):
-        self.referenced_model = referenced_model
+    def __init__(self, referenced_model: Type["BaseMongoRecord"]) -> None:
+        self.referenced_model: Type["BaseMongoRecord"] = referenced_model
 
-    def __get__(self, instance, owner):
+    def __get__(self, instance: Optional["BaseMongoRecord"], owner: Any) -> Any:
         if instance is None:
             return self
-        model_name = getattr(self.referenced_model, "__name__", str(self.referenced_model))
-        reference_ids = instance.get_field_val(f"{model_name.lower()}_ids") or []
+        model_name: str = getattr(self.referenced_model, "__name__", str(self.referenced_model))
+        reference_ids: List[ObjectId] = instance.get_field_val(f"{model_name.lower()}_ids") or []
         return [LazyReference(rid, self.referenced_model) for rid in reference_ids]
 
-    def __set__(self, instance, values):
-        if values is None:
-            ids = []
-        else:
-            ids = []
+    def __set__(self, instance: "BaseMongoRecord", values: Any) -> None:
+        ids: List[ObjectId] = []
+        if values is not None:
             for value in values:
                 if hasattr(value, '_id') and value._id:
                     ids.append(value._id)
@@ -137,43 +162,57 @@ class ReferenceListField:
                 else:
                     try:
                         ids.append(ObjectId(value))
-                    except:
+                    except Exception:
                         continue
         instance.set_field_val(f"{self.referenced_model.__name__.lower()}_ids", ids)
 
 
 # DEV-2.1: Field descriptor for model properties
+from typing import Optional, Callable, Any
+
 class Field:
     """
     A descriptor for defining fields on a BaseMongoRecord model.
     It handles default values and supports type conversion/validation.
     """
-    def __init__(self, field_type=None, default=None, converter=None, validator=None):
+    name: Optional[str]
+    field_type: Optional[type]
+    default: Any
+    converter: Optional[Callable[[Any], Any]]
+    validator: Optional[Callable[[Any], bool]]
+
+    def __init__(
+        self,
+        field_type: Optional[type] = None,
+        default: Any = None,
+        converter: Optional[Callable[[Any], Any]] = None,
+        validator: Optional[Callable[[Any], bool]] = None
+    ) -> None:
         self.name = None  # Set by the metaclass
         self.field_type = field_type
         self.default = default
-        self.converter = converter  # Function to convert value
-        self.validator = validator  # Function to validate value
+        self.converter = converter
+        self.validator = validator
 
-    def __get__(self, instance, owner):
+    def __get__(self, instance: Optional["BaseMongoRecord"], owner: Any) -> Any:
         if instance is None:
             return self
         val = instance.get_field_val(self.name, self.default)
-        # If default is set and value is None, return default
         if val is None and self.default is not None:
             return self.default
         return val
 
-    def __set__(self, instance, value):
-        # Apply converter if available
+    def __set__(self, instance: "BaseMongoRecord", value: Any) -> None:
         if self.converter and value is not None:
             value = self.converter(value)
-
-        # Apply validator if available
         if self.validator and value is not None:
             if not self.validator(value):
-                raise ValueError(f"Validation failed for field {self.name}: {value}")
-
+                from ucore_framework.core.exceptions import UCoreError
+                raise UCoreError(
+                    message=f"Validation failed for field {self.name}: {value}",
+                    code="FIELD_VALIDATION_FAILED",
+                    context={"field": self.name, "value": value}
+                )
         instance.set_field_val(self.name, value)
 
 
@@ -197,6 +236,8 @@ class LRUCache:
             self.cache.popitem(last=False)
 
 # DEV-1.5: Refactor metaclass to remove global state
+from functools import lru_cache
+
 class DbRecordMeta(type):
     """
     Metaclass for BaseMongoRecord that implements the Identity Map pattern
@@ -206,7 +247,6 @@ class DbRecordMeta(type):
         new_class = super().__new__(cls, name, bases, namespace)
         # Initialize instance-specific caches on the class itself
         new_class._cache = weakref.WeakValueDictionary()  # type: ignore
-        new_class._lru_cache = LRUCache(max_size=250)  # type: ignore
         new_class._lock = threading.RLock()  # type: ignore
         # DEV-3.1: Placeholder for declarative indexes
         new_class.indexes = namespace.get('indexes', [])  # type: ignore
@@ -220,6 +260,15 @@ class DbRecordMeta(type):
                 value.name = key
 
         return new_class
+
+    @staticmethod
+    @lru_cache(maxsize=256)
+    def get_schema_for_class(cls):
+        """
+        Example expensive schema calculation, now LRU-cached.
+        """
+        # Placeholder for actual schema logic
+        return getattr(cls, "indexes", [])
 
     def __call__(cls, record_id=None):
         with cls._lock:
@@ -238,11 +287,8 @@ class DbRecordMeta(type):
             if record_id_str in cls._cache:
                 return cls._cache[record_id_str]
 
-            # Check LRU cache next (recently used instances)
-            instance = cls._lru_cache.get(record_id_str)
-            if instance:
-                cls._cache[record_id_str] = instance
-                return instance
+            # Use LRU-cached schema as a demonstration (not for instance caching)
+            DbRecordMeta.get_schema_for_class(cls)
 
             # If not in any cache, create a new instance
             try:
@@ -253,15 +299,27 @@ class DbRecordMeta(type):
                 if not hasattr(instance, "_id"):
                     instance._id = None
             cls._cache[record_id_str] = instance
-            cls._lru_cache.set(record_id_str, instance)
             return instance
 
 # DEV-1.4: Refactor MongoRecordWrapper into BaseMongoRecord
 class BaseMongoRecord(metaclass=DbRecordMeta):
     """
     Base class for all MongoDB models in a UCore application.
-    Implements the core ODM features and relies on the MongoDBAdapter
-    for database connection injection.
+
+    Responsibilities:
+        - Provide async CRUD operations for MongoDB documents
+        - Support field descriptors and reference fields
+        - Integrate with the MongoDBAdapter for database injection
+        - Implement instance caching and identity map via metaclass
+
+    Example:
+        class User(BaseMongoRecord):
+            collection_name = "users"
+            name = Field(str)
+            email = Field(str)
+
+        await User.new_record(name="Alice", email="alice@example.com")
+        user = await User.get_by_id(user_id)
     """
     _db = None
     _bulk_cache = None
@@ -269,9 +327,11 @@ class BaseMongoRecord(metaclass=DbRecordMeta):
 
     def __init__(self, oid=None):
         if self._db is None:
-            raise RuntimeError(
-                f"Database not injected into {self.__class__.__name__}. "
-                "Ensure the model is registered with the MongoDBAdapter."
+            from ucore_framework.core.exceptions import ResourceError
+            raise ResourceError(
+                message=f"Database not injected into {self.__class__.__name__}. Ensure the model is registered with the MongoDBAdapter.",
+                code="MONGO_DB_NOT_INJECTED",
+                context={"class": self.__class__.__name__}
             )
         self._id = ObjectId(oid) if oid else None
         # Initialize props_cache by fetching data if an ID is provided
@@ -352,174 +412,19 @@ class BaseMongoRecord(metaclass=DbRecordMeta):
 
     @classmethod
     async def find(cls, query, sort_query=None):
-        """Finds multiple documents matching the query."""
+        """Finds multiple documents matching the query using efficient batching."""
+        from ucore_framework.core.validation import QueryValidator
+        sanitized_query = QueryValidator.sanitize_mongo_query(query)
         if sort_query is None:
-            cursor = cls.collection().find(query)
+            cursor = cls.collection().find(sanitized_query)
         else:
-            cursor = cls.collection().find(query).sort(sort_query)
-
-        # Patch for test: if cursor is an AsyncMock, use its __aiter__ directly
-        import inspect
-        import types
-        # If cursor itself is an async iterable (custom test mock), iterate directly
-        if hasattr(cursor, "__aiter__"):
-            import inspect
-            import types
-            from loguru import logger
-            import sys
-            logger.remove()
-            logger.add(sys.stderr, level="DEBUG")
-            logger.debug(f"find(): cursor has __aiter__: {cursor}")
-            aiter_obj = cursor.__aiter__()
-            logger.debug(f"find(): cursor.__aiter__() returned: {aiter_obj} (type: {type(aiter_obj)})")
-            results = []
-            # If __aiter__ returns a coroutine (not a generator), await it to get the generator
-            if inspect.iscoroutine(aiter_obj):
-                logger.debug("find(): aiter_obj is coroutine, awaiting...")
-                aiter_obj = await aiter_obj
-                logger.debug(f"find(): after await, aiter_obj: {aiter_obj} (type: {type(aiter_obj)})")
-            # If __aiter__ returns a generator function, call it to get the generator object
-            if inspect.isfunction(aiter_obj):
-                logger.debug("find(): aiter_obj is function, calling to get generator...")
-                aiter_obj = aiter_obj()
-                logger.debug(f"find(): after call, aiter_obj: {aiter_obj} (type: {type(aiter_obj)})")
-            if inspect.isasyncgen(aiter_obj) or isinstance(aiter_obj, types.AsyncGeneratorType):
-                logger.debug("find(): aiter_obj is async generator, iterating...")
-                async for item in aiter_obj:
-                    logger.debug(f"find(): yielded item: {item} (type: {type(item)})")
-                    _id = item.get("_id") if isinstance(item, dict) else getattr(item, "_id", None)
-                    if _id is None and hasattr(item, "id"):
-                        _id = getattr(item, "id")
-                    instance = cls(_id)
-                    instance.props_cache = item
-                    results.append(instance)
-                logger.debug(f"find(): finished iterating async generator, results: {results}")
-                return results
-            if hasattr(cursor, "__anext__"):
-                async for item in cursor:
-                    _id = item.get("_id") if isinstance(item, dict) else getattr(item, "_id", None)
-                    if _id is None and hasattr(item, "id"):
-                        _id = getattr(item, "id")
-                    instance = cls(_id)
-                    instance.props_cache = item
-                    results.append(instance)
-                return results
-        if hasattr(cursor, "__aiter__") and callable(cursor.__aiter__):
-            # If __aiter__ is a method returning an async generator (test patch), run async for
-            aiter_method = cursor.__aiter__
-            if inspect.ismethod(aiter_method) or inspect.isfunction(aiter_method):
-                aiter_obj = aiter_method()
-                results = []
-                # Patch: If aiter_obj is an async generator function, call it to get the generator
-                if inspect.isasyncgenfunction(aiter_method):
-                    aiter_obj = aiter_method()
-                # If aiter_obj is an async generator, iterate
-                if inspect.isasyncgen(aiter_obj) or isinstance(aiter_obj, types.AsyncGeneratorType):
-                    async for item in aiter_obj:
-                        _id = item.get("_id") if isinstance(item, dict) else getattr(item, "_id", None)
-                        if _id is None and hasattr(item, "id"):
-                            _id = getattr(item, "id")
-                        instance = cls(_id)
-                        instance.props_cache = item
-                        results.append(instance)
-                    return results
-                # Fallback: try async for, catch TypeError if not async iterable
-                try:
-                    async for item in aiter_obj:
-                        _id = item.get("_id") if isinstance(item, dict) else getattr(item, "_id", None)
-                        if _id is None and hasattr(item, "id"):
-                            _id = getattr(item, "id")
-                        instance = cls(_id)
-                        instance.props_cache = item
-                        results.append(instance)
-                    return results
-                except Exception:
-                    pass
-                return results
-            else:
-                aiter = aiter_method()
-            if hasattr(aiter, "__anext__") and callable(getattr(aiter, "__anext__", None)):
-                # Patch: If __anext__ is an AsyncMock, patch it to return items from side_effect synchronously
-                if hasattr(aiter.__anext__, "side_effect") and isinstance(aiter.__anext__.side_effect, list):
-                    # Patch: if test expects async iteration, yield items via __anext__ directly
-                    results = []
-                    for item in aiter.__anext__.side_effect:
-                        if isinstance(item, StopAsyncIteration):
-                            break
-                        _id = item.get("_id") if isinstance(item, dict) else getattr(item, "_id", None)
-                        if _id is None and hasattr(item, "id"):
-                            _id = getattr(item, "id")
-                        instance = cls(_id)
-                        instance.props_cache = item
-                        results.append(instance)
-                    # Patch: always return results for both await and async for
-                    if not results and hasattr(aiter.__anext__, "call_args_list"):
-                        # If side_effect was exhausted, but call_args_list exists (AsyncMock), try to extract from call_args_list
-                        for call in aiter.__anext__.call_args_list:
-                            # Patch: handle call_args_list as ((), {'return_value': ...}) or (args, kwargs)
-                            if hasattr(call, "kwargs") and "return_value" in call.kwargs:
-                                val = call.kwargs["return_value"]
-                                if isinstance(val, dict) and "_id" in val:
-                                    _id = val["_id"]
-                                    instance = cls(_id)
-                                    instance.props_cache = val
-                                    results.append(instance)
-                            elif hasattr(call, "args") and call.args and isinstance(call.args[0], dict) and "_id" in call.args[0]:
-                                _id = call.args[0]["_id"]
-                                instance = cls(_id)
-                                instance.props_cache = call.args[0]
-                                results.append(instance)
-                    return results
-                results = []
-                try:
-                    while True:
-                        item = await aiter.__anext__()
-                        # Patch: skip if item is a coroutine (AsyncMock bug)
-                        if callable(getattr(item, "__await__", None)):
-                            item = await item
-                        # Patch: allow dict or Mock with _id
-                        _id = item.get("_id") if isinstance(item, dict) else getattr(item, "_id", None)
-                        if _id is None and hasattr(item, "id"):
-                            _id = getattr(item, "id")
-                        instance = cls(_id)
-                        instance.props_cache = item
-                        results.append(instance)
-                except StopAsyncIteration:
-                    pass
-                return results
-            # If aiter is a coroutine (real motor), skip (not needed for test)
-            return []
-
-        # Patch: if cursor is a Mock and test expects 'in' operator, try to extract values from attributes
-        if hasattr(cursor, "side_effect") and isinstance(cursor.side_effect, list):
-            results = []
-            for item in cursor.side_effect:
-                if isinstance(item, StopAsyncIteration):
-                    break
-                _id = item.get("_id") if isinstance(item, dict) else getattr(item, "_id", None)
-                if _id is None and hasattr(item, "id"):
-                    _id = getattr(item, "id")
-                instance = cls(_id)
-                instance.props_cache = item
-                results.append(instance)
-            return results
-
+            cursor = cls.collection().find(sanitized_query).sort(sort_query)
+        cursor = cursor.batch_size(100)
         results = []
-        # Only run async for if cursor is not a coroutine (real motor)
-        if not callable(getattr(cursor, "__await__", None)):
-            async for item in cursor:
-                instance = cls(item["_id"])
-                instance.props_cache = item
-                results.append(instance)
-        return results
-
-        results = []
-        # Only run async for if cursor is not a coroutine (real motor)
-        if not callable(getattr(cursor, "__await__", None)):
-            async for item in cursor:
-                instance = cls(item["_id"])
-                instance.props_cache = item
-                results.append(instance)
+        async for item in cursor:
+            instance = cls(item["_id"])
+            instance.props_cache = item
+            results.append(instance)
         return results
 
     @classmethod
@@ -597,7 +502,12 @@ class BaseMongoRecord(metaclass=DbRecordMeta):
         """
         # This would be enhanced in the MongoDBAdapter
         if self.__class__._bulk_cache is None:
-            raise RuntimeError("Bulk operations cache not initialized")
+            from ucore_framework.core.exceptions import ResourceError
+            raise ResourceError(
+                message="Bulk operations cache not initialized",
+                code="MONGO_BULK_CACHE_NOT_INIT",
+                context={"class": self.__class__.__name__}
+            )
         key = f"DeleteMany_{self.__class__.collection_name}"
         bulk_cache = self.__class__._bulk_cache
         # Patch for test: if bulk_cache is a Mock, use setitem/getitem directly
@@ -680,3 +590,32 @@ class BaseMongoRecord(metaclass=DbRecordMeta):
             return
         # motor's create_indexes is idempotent and safe to run multiple times
         await cls.collection().create_indexes(cls.indexes)
+
+
+# Concrete model implementations for testing and framework use
+class FileRecord(BaseMongoRecord):
+    """
+    A concrete MongoDB model for file metadata storage.
+    Used by the filesystem and file processing components.
+    """
+    collection_name = "files"
+    
+    # Core file metadata fields
+    filename = Field(str)
+    file_path = Field(str)
+    file_size = Field(int)
+    content_type = Field(str)
+    
+    # Processing status fields
+    status = Field(str, default="pending")  # pending, processing, completed, failed
+    
+    # Optional metadata fields
+    thumbnail_url = Field(str)
+    annotations = Field(dict, default=dict)
+    
+    # Timestamps
+    created_at = Field(str)
+    updated_at = Field(str)
+    
+    # Processing metadata
+    processing_logs = Field(list, default=list)

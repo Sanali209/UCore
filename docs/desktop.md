@@ -1,53 +1,74 @@
-# Desktop Domain Guide
+# Desktop UI & Plugins
 
-## Purpose
-
-The desktop domain provides UI integration for desktop applications, supporting both Flet (web-based UI) and PySide6 (native Qt desktop UI).
+This section documents the desktop UI integration and plugin support in UCore, enabling rich desktop applications and extensible UI components.
 
 ---
 
-## Main Classes & Components
+## Overview
 
-- `FletAdapter`: Integrates Flet web UI with the UCore component system.
-- `PySide6Adapter`: Integrates PySide6/Qt desktop UI with UCore.
+UCore supports desktop application development with:
+- UI adapters for PySide6 and Flet
+- Plugin system for desktop UI extensions
+- Event-driven architecture for UI updates
+- Integration with MVVM and resource management
+
+---
+
+## Key Components
+
+- **TabbedWindow:**  
+  Main window class for tabbed desktop UIs.
+
+- **EditorTextPlugin, ViewerImagePlugin:**  
+  Example plugins for text editing and image viewing.
+
+- **DesktopEventBus:**  
+  Event bus for desktop-specific events.
+
+- **Settings, Plugin API:**  
+  Classes for managing user settings and plugin APIs.
 
 ---
 
 ## Usage Example
 
 ```python
-from ucore_framework.desktop.ui.flet.flet_adapter import FletAdapter
+from ucore_framework.desktop.ui.tabbed_window import TabbedWindow
+from ucore_framework.desktop.plugins.editor_text import EditorTextPlugin
 
-flet_adapter = FletAdapter(app, target_func=my_ui_func, port=8085)
+window = TabbedWindow()
+window.add_plugin(EditorTextPlugin())
+window.show()
 ```
 
 ---
 
-## PySide6 Example
+## Plugin Integration
 
-```python
-from ucore_framework.desktop.ui.pyside6_adapter import PySide6Adapter
-
-pyside_adapter = PySide6Adapter(app)
-```
+- Create new desktop plugins by subclassing the plugin base classes.
+- Register plugins with the main window or via configuration.
+- Use the event bus to communicate between plugins and the core app.
 
 ---
 
-## Extensibility & OOP
+## UI Adapters
 
-- Subclass adapters for custom UI logic.
-- Integrate with UCore components and event system.
+- **PySide6Adapter:**  
+  For native desktop UIs with PySide6.
 
----
-
-## Integration Points
-
-- UI adapters can be used alongside web and API servers.
-- Supports real-time updates and event-driven UI.
+- **FletAdapter:**  
+  For cross-platform UIs with Flet (if available).
 
 ---
 
-## See Also
+## Extending Desktop Functionality
 
-- [Project Structure Guide](project-structure-guide.md)
-- [UCore Framework Guide](ucore-ucore_framework-guide.md)
+- Add new plugins for custom editors, viewers, or tools.
+- Integrate with MVVM viewmodels for reactive UIs.
+- Use resource management for file and data access.
+
+---
+
+See also:  
+- [MVVM & UI Utilities](mvvm.md)  
+- [Core Framework](core.md)
